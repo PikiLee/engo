@@ -2,7 +2,7 @@
 import {ref} from 'vue';
 import EncryptionHome from './components/EncryptionHome.vue';
 
-const activeKey = ref(1);
+const activeKey = ref(0);
 </script>
 
 <template>
@@ -11,13 +11,13 @@ const activeKey = ref(1);
     centered
   >
     <a-tab-pane
-      key="1"
+      key="0"
       tab="加密"
     >
       <EncryptionHome></EncryptionHome>
     </a-tab-pane>
     <a-tab-pane
-      key="2"
+      key="1"
       tab="解密"
       force-render
     >
