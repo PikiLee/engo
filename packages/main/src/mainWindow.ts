@@ -1,3 +1,4 @@
+import {startEncrypt} from './encrypt';
 import {app, BrowserWindow, ipcMain} from 'electron';
 import {join} from 'path';
 import {URL} from 'url';
@@ -18,7 +19,10 @@ async function createWindow() {
   ipcMain.handle('selectFile', async (_, type: 'file' | 'dir') => {
     const openType = type === 'file' ? 'openFile' : 'openDirectory';
     const res = await dialog.showOpenDialog({properties: [openType]});
-    browserWindow.webContents.send('filePath', res.filePaths[0] ?? ''); 
+    browserWindow.webContents.send('filePath', res.filePaths[0] ?? '');
+  });
+  ipcMain.handle('startEncrypt', async (_, args: {inputPath: string; outputDir: string}) => {
+    await startEncrypt(args.inputPath, args.outputDir);
   });
 
   /**

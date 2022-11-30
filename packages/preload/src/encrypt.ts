@@ -8,3 +8,7 @@ export const selectFile = (
   ipcRenderer.invoke('selectFile', type);
   ipcRenderer.once('filePath', callback);
 };
+
+export const invokeEncrypt = (inputPath:string, outputDir: string) => {
+  ipcRenderer.invoke('startEncrypt', {inputPath, outputDir});
+};

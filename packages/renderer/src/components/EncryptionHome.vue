@@ -32,13 +32,18 @@
       </a-col> -->
     </a-row>
     <a-divider />
-    <a-button type="primary">开始加密</a-button>
+    <a-button
+      type="primary"
+      @click="en"
+    >
+      开始加密
+    </a-button>
     <p>{{ versions }}</p>
   </div>
 </template>
 
 <script setup lang="ts">
-import {versions, selectFile} from '#preload';
+import {versions, selectFile, invokeEncrypt} from '#preload';
 import {ref} from 'vue';
 import type {Event} from 'electron';
 
@@ -55,6 +60,10 @@ const getOutputPath = () => {
   selectFile('dir', (event: Event, filePath: string) => {
     outputPath.value = filePath;
   });
+};
+
+const en = () => {
+  invokeEncrypt(inputPath.value, outputPath.value);
 };
 </script>
 

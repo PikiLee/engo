@@ -14,7 +14,10 @@ export const startEncrypt = async (input: string, output: string) => {
     const outputDir = path.normalize(output);
     if (!fs.existsSync(inputPath) || !fs.existsSync(outputDir)) throw '文件或目录不存在';
     if (!isDirectory(outputDir)) throw '输出路径必须为文件';
-    let outputPath = path.join(outputDir, dayjs().format('YYYY-MM-DDTHH-mm-ss') + '-' + path.basename(inputPath));
+    let outputPath = path.join(
+      outputDir,
+      dayjs().format('YYYY-MM-DDTHH-mm-ss') + '-' + path.basename(inputPath),
+    );
 
     if (isDirectory(inputPath)) {
       // zip
