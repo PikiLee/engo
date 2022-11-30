@@ -27,7 +27,9 @@ export const startEncrypt = async (
       // zip
       const tempDir = os.tmpdir();
       const tempFile = path.join(tempDir, Math.random() + '.tgz');
-      inputPath = await zip(inputPath, tempFile);
+
+      await zip(inputPath, tempFile);
+      inputPath = tempFile;
       outputPath = outputPath + '.tgz';
     }
 
