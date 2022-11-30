@@ -39,4 +39,5 @@ test('test startEncrypt function', async () => {
   const outputPath = 'C:\\Users\\root\\Desktop\\test\\engo-test';
 
   expect(await startEncrypt(inputPath, outputPath)).toBe(true);
+  await fs.unlink('./key');
 });
