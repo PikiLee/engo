@@ -25,15 +25,18 @@
       <a-col :span="24">
         <a-button @click="getOutputPath">选择目录</a-button>
       </a-col>
-      <!-- <a-col :span="6">目标目录</a-col>
-      <a-col :span="12">c:/toot/toto</a-col>
-      <a-col :span="6">
-        <a-button>选择目录</a-button>
-      </a-col> -->
     </a-row>
     <a-divider />
+    <a-typography-paragraph
+      data-test="msg"
+      strong
+    >
+      {{ msg }}
+    </a-typography-paragraph>
     <a-button
       type="primary"
+      :loading="loading"
+      data-test="startBtn"
       @click="en"
     >
       开始加密
@@ -49,6 +52,8 @@ import type {Event} from 'electron';
 
 const inputPath = ref('');
 const outputPath = ref('');
+const msg = ref('');
+const loading = ref(false);
 
 const getInputFile = (type: 'file' | 'dir') => {
   selectFile(type, (event: Event, filePath: string) => {
@@ -63,7 +68,16 @@ const getOutputPath = () => {
 };
 
 const en = () => {
-  invokeEncrypt(inputPath.value, outputPath.value);
+  if (!inputPath.value || !outputPath.value) {
+    msg.value = '路径不能为空';
+  }
+  msg.value = '开始加密';
+  loading.value = true;
+
+  invokeEncrypt(inputPath.value, outputPath.value, (_, message: string) => {
+    msg.value = message;
+    loading.value = false;
+  });
 };
 </script>
 

@@ -22,7 +22,9 @@ async function createWindow() {
     browserWindow.webContents.send('filePath', res.filePaths[0] ?? '');
   });
   ipcMain.handle('startEncrypt', async (_, args: {inputPath: string; outputDir: string}) => {
-    await startEncrypt(args.inputPath, args.outputDir);
+    await startEncrypt(args.inputPath, args.outputDir, (message: string) => {
+      browserWindow.webContents.send('encryptMsg', message);
+    });
   });
 
   /**

@@ -8,7 +8,11 @@ const crypto = require('node:crypto');
 const {keyObject} = require('node:crypto');
 const dayjs = require('dayjs');
 
-export const startEncrypt = async (input: string, output: string) => {
+export const startEncrypt = async (
+  input: string,
+  output: string,
+  callback: (message: string) => void,
+) => {
   try {
     let inputPath = path.normalize(input);
     const outputDir = path.normalize(output);
@@ -39,11 +43,14 @@ export const startEncrypt = async (input: string, output: string) => {
     }
 
     await encrypt(key, inputPath, outputPath);
+    callback('加密成功');
 
     return true;
   } catch (err) {
     console.log(err);
-    return false;
+    if (typeof err === 'string') {
+      callback(err);
+    }
   }
 };
 

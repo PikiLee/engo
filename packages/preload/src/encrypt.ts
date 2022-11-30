@@ -1,5 +1,6 @@
 import type {Event} from 'electron';
 const {ipcRenderer} = require('electron');
+import type {IpcRendererEvent} from 'electron';
 
 export const selectFile = (
   type: 'file' | 'dir',
@@ -9,6 +10,11 @@ export const selectFile = (
   ipcRenderer.once('filePath', callback);
 };
 
-export const invokeEncrypt = (inputPath:string, outputDir: string) => {
+export const invokeEncrypt = (
+  inputPath: string,
+  outputDir: string,
+  callback: (event: IpcRendererEvent, message: string) => void,
+) => {
   ipcRenderer.invoke('startEncrypt', {inputPath, outputDir});
+  ipcRenderer.once('encryptMsg', callback);
 };
