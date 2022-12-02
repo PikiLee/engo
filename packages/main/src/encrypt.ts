@@ -8,9 +8,10 @@ const dayjs = require('dayjs');
 import {randomBytes, pbkdf2Sync} from 'node:crypto';
 import {Buffer} from 'node:buffer';
 const archiver = require('archiver');
-import {createWriteStream, accessSync} from 'node:fs';
+import {createWriteStream, accessSync, createReadStream} from 'node:fs';
 // import {fileURLToPath} from 'node:url';
 import {join, basename, dirname, extname} from 'path';
+import {createHmac} from 'node:crypto';
 
 export const generateKey = (password: string) => {
   const salt = randomBytes(16);
@@ -204,6 +205,52 @@ export const encrypt = async (
         });
       }
     });
+  });
+};
+
+/**
+ * Generate HMAC
+ * @param {Buffer} hashKey
+ * @param {string} filePath
+ * @param {Object} options
+ * @property {string} options.algorithm
+ */
+export const HMAC = (
+  hashKey: Buffer,
+  filePath: string,
+  options?: {
+    algorithm?: string;
+  },
+) => {
+  const opts = Object.assign(
+    {
+      algorithm: 'sha-512',
+    },
+    options,
+  );
+
+  const {algorithm} = opts;
+
+  const hmac = createHmac(algorithm, hashKey);
+  const input = createReadStream(filePath);
+
+  return new Promise<{
+    hash: string;
+    algorithm: string;
+  }>((resolve, reject) => {
+    input.on('error', err => {
+      console.log(err);
+      reject(err);
+    });
+
+    input.on('end', () => {
+      resolve({
+        hash: hmac.digest('hex'),
+        algorithm,
+      });
+    });
+
+    input.pipe(hmac);
   });
 };
 

@@ -7,8 +7,11 @@ import {Buffer} from 'node:buffer';
 import {unlinkSync, accessSync} from 'node:fs';
 import {join} from 'node:path';
 import {encrypt} from '../src/encrypt';
+import {HMAC} from './../src/encrypt';
 
 const password = 'goodjobpeople';
+const inputPath = 'C:\\Users\\root\\Desktop\\test\\engo-test\\toBeEnctypted.txt';
+
 describe('test generate key', () => {
   test('generate key', () => {
     const {kdfSalt, kdfKey} = generateKey(password);
@@ -92,5 +95,12 @@ describe('test encrypt file', () => {
     const expectedOutputPath = 'C:\\Users\\root\\Desktop\\test\\engo-test\\toBeEnctypted.nmsl';
     expect(res2.outputPath).toBe(expectedOutputPath);
     unlinkSync(expectedOutputPath);
+  });
+});
+
+describe('test HMAC', () => {
+  test('test generate HMAC', async () => {
+    const hashKey = Buffer.alloc(64, 'a');
+    expect((await HMAC(hashKey, inputPath)).hash.length).toBe(128);
   });
 });
