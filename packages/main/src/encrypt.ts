@@ -4,13 +4,13 @@ import {writeFile, readFile} from 'node:fs/promises';
 const path = require('node:path');
 const pump = require('pump');
 const crypto = require('node:crypto');
-// const dayjs = require('dayjs');
+const dayjs = require('dayjs');
 import {randomBytes, pbkdf2Sync} from 'node:crypto';
 import {Buffer} from 'node:buffer';
 const archiver = require('archiver');
 import {createWriteStream, accessSync} from 'node:fs';
 // import {fileURLToPath} from 'node:url';
-import {join, basename} from 'path';
+import {join, basename, dirname, extname} from 'path';
 
 export const generateKey = (password: string) => {
   const salt = randomBytes(16);
@@ -36,24 +36,33 @@ export const splitKey = (originalKey: Buffer) => {
   };
 };
 
+/**
+ * compress a file or a directory
+ * @param {string} inputPath - the path of the input
+ * @param {Object} options
+ * @property {string} options.outputDir - optional
+ * @property {string} options.outputFilename - optional
+ *
+ */
 export const compress = async (
   inputPath: string,
-  outputDir: string,
   options?: {
+    outputDir?: string;
     outputFilename?: string;
   },
 ) => {
-  doesExist(inputPath);
-  if (!isDirectory(outputDir)) throw '必须是目录';
-
   const filename = basename(inputPath);
+  const inputDir = dirname(inputPath);
   const opts = Object.assign(
     {
+      outputDir: inputDir,
       outputFilename: filename,
     },
     options,
   );
-  const {outputFilename} = opts;
+  const {outputDir, outputFilename} = opts;
+  doesExist(inputPath);
+  if (!isDirectory(outputDir)) throw '必须是目录';
   const outputFile = join(outputDir, outputFilename + '.zip');
   const output = createWriteStream(outputFile);
   const archive = archiver('zip', {
@@ -131,27 +140,69 @@ export const compress = async (
 // }
 // };
 
-export const encrypt = async (key: Buffer, inputpath: string, outputPath: string) => {
-  if (!fs.existsSync(outputPath)) {
-    fs.writeFileSync(outputPath, '');
-  }
+/**
+ * Encrypt a file.
+ * @param {Buffer} key - Encryption Key
+ * @param {string} inputPath
+ * @param {Object} options
+ * @property {string} options.algorithm
+ * @property {string} options.utputDir
+ * @property {string} options.utputFilename
+ * @property {boolean} options.addTime - whether or not add current time in the name of output file.
+ */
+export const encrypt = async (
+  key: Buffer,
+  inputPath: string,
+  options?: {
+    algorithm?: string;
+    outputDir?: string;
+    outputFilename?: string;
+    addTime?: boolean;
+  },
+) => {
+  const inputDir = dirname(inputPath);
+  const inputFileExt = extname(inputPath);
+  const inputFilename = basename(inputPath, inputFileExt);
+  const opts = Object.assign(
+    {
+      algorithm: 'aes-256-ctr',
+      outputDir: inputDir,
+      outputFilename: inputFilename,
+      addTime: true,
+    },
+    options,
+  );
+  const {algorithm, outputDir, outputFilename, addTime} = opts;
 
-  const readable = fs.createReadStream(inputpath);
+  const iv = randomBytes(16);
+
+  const outputPath = addTime
+    ? join(outputDir, dayjs().format('YYYY-MM-DDTHH-mm-ss') + '__' + outputFilename + '.nmsl')
+    : join(outputDir, outputFilename + '.nmsl');
+
+  const readable = fs.createReadStream(inputPath);
   const writeable = fs.createWriteStream(outputPath);
 
-  const algorithm = 'AES-256-CBC';
-
-  return new Promise((resolve, reject) => {
-    crypto.randomFill(new Uint8Array(16), (err: string, iv: Buffer) => {
-      if (err) reject(err);
-      const cipher = crypto.createCipheriv(algorithm, key, iv);
-      pump(readable, cipher, writeable, (err: string) => {
-        if (err) {
-          reject(err);
-        } else {
-          resolve('succeed');
-        }
-      });
+  return new Promise<{
+    enKey: Buffer;
+    algorithm: string;
+    iv: Buffer;
+    outputPath: string;
+    ext: string;
+  }>((resolve, reject) => {
+    const cipher = crypto.createCipheriv(algorithm, key, iv);
+    pump(readable, cipher, writeable, (err: string) => {
+      if (err) {
+        reject(err);
+      } else {
+        resolve({
+          enKey: key,
+          algorithm,
+          iv,
+          outputPath,
+          ext: inputFileExt,
+        });
+      }
     });
   });
 };
