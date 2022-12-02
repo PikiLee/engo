@@ -1,6 +1,5 @@
 const fs = require('node:fs');
 import {writeFile, readFile} from 'node:fs/promises';
-const compressing = require('compressing');
 // const os = require('node:os');
 const path = require('node:path');
 const pump = require('pump');
@@ -8,6 +7,10 @@ const crypto = require('node:crypto');
 // const dayjs = require('dayjs');
 import {randomBytes, pbkdf2Sync} from 'node:crypto';
 import {Buffer} from 'node:buffer';
+const archiver = require('archiver');
+import {createWriteStream, accessSync} from 'node:fs';
+// import {fileURLToPath} from 'node:url';
+import {join, basename} from 'path';
 
 export const generateKey = (password: string) => {
   const salt = randomBytes(16);
@@ -33,18 +36,51 @@ export const splitKey = (originalKey: Buffer) => {
   };
 };
 
-export const zip = async (inputPath: string, outputPath: string): Promise<string> => {
-  if (!isDirectory) throw '必需是目录';
-  const tarStream = new compressing.tgz.Stream();
-  tarStream.addEntry(inputPath);
-  const destStream = fs.createWriteStream(outputPath);
-  return new Promise((resovle, reject) =>
-    pump(tarStream, destStream, (err: string) => {
-      console.log(err);
-      if (err) reject('error');
-      resovle('succeed');
-    }),
+export const compress = async (
+  inputPath: string,
+  outputDir: string,
+  options?: {
+    outputFilename?: string;
+  },
+) => {
+  doesExist(inputPath);
+  if (!isDirectory(outputDir)) throw '必须是目录';
+
+  const filename = basename(inputPath);
+  const opts = Object.assign(
+    {
+      outputFilename: filename,
+    },
+    options,
   );
+  const {outputFilename} = opts;
+  const outputFile = join(outputDir, outputFilename + '.zip');
+  const output = createWriteStream(outputFile);
+  const archive = archiver('zip', {
+    zlib: {
+      level: 9,
+    },
+  });
+
+  const res = new Promise<string>((resolve, reject) => {
+    output.on('close', function () {
+      console.log(archive.pointer() + ' total bytes');
+      resolve(outputFile);
+    });
+    archive.on('error', function (err: string) {
+      reject(err);
+    });
+  });
+
+  archive.pipe(output);
+  if (isDirectory(inputPath)) {
+    archive.directory(inputPath, false);
+  } else {
+    archive.file(inputPath, {name: outputFilename});
+  }
+  archive.finalize();
+
+  return res;
 };
 
 // export const startEncrypt = async (
@@ -52,47 +88,47 @@ export const zip = async (inputPath: string, outputPath: string): Promise<string
 //   output: string,
 //   callback: (message: string) => void,
 // ) => {
-  // try {
-  //   let inputPath = path.normalize(input);
-  //   const outputDir = path.normalize(output);
-  //   if (!fs.existsSync(inputPath) || !fs.existsSync(outputDir)) throw '文件或目录不存在';
-  //   if (!isDirectory(outputDir)) throw '输出路径必须为文件';
-  //   let outputPath = path.join(
-  //     outputDir,
-  //     dayjs().format('YYYY-MM-DDTHH-mm-ss') + '-' + path.basename(inputPath),
-  //   );
+// try {
+//   let inputPath = path.normalize(input);
+//   const outputDir = path.normalize(output);
+//   if (!fs.existsSync(inputPath) || !fs.existsSync(outputDir)) throw '文件或目录不存在';
+//   if (!isDirectory(outputDir)) throw '输出路径必须为文件';
+//   let outputPath = path.join(
+//     outputDir,
+//     dayjs().format('YYYY-MM-DDTHH-mm-ss') + '-' + path.basename(inputPath),
+//   );
 
-  //   if (isDirectory(inputPath)) {
-  //     // zip
-  //     const tempDir = os.tmpdir();
-  //     const tempFile = path.join(tempDir, Math.random() + '.tgz');
+//   if (isDirectory(inputPath)) {
+//     // zip
+//     const tempDir = os.tmpdir();
+//     const tempFile = path.join(tempDir, Math.random() + '.tgz');
 
-  //     await zip(inputPath, tempFile);
-  //     inputPath = tempFile;
-  //     outputPath = outputPath + '.tgz';
-  //   }
+//     await zip(inputPath, tempFile);
+//     inputPath = tempFile;
+//     outputPath = outputPath + '.tgz';
+//   }
 
-  //   outputPath += '.nmsl';
+//   outputPath += '.nmsl';
 
-  //   const keyPath = './key';
-  //   let key: Buffer;
-  //   if (!fs.existsSync(keyPath)) {
-  //     key = await generateKey();
-  //     await writeKey(keyPath, key);
-  //   } else {
-  //     key = await readKey(keyPath);
-  //   }
+//   const keyPath = './key';
+//   let key: Buffer;
+//   if (!fs.existsSync(keyPath)) {
+//     key = await generateKey();
+//     await writeKey(keyPath, key);
+//   } else {
+//     key = await readKey(keyPath);
+//   }
 
-  //   await encrypt(key, inputPath, outputPath);
-  //   callback('加密成功');
+//   await encrypt(key, inputPath, outputPath);
+//   callback('加密成功');
 
-  //   return true;
-  // } catch (err) {
-  //   console.log(err);
-  //   if (typeof err === 'string') {
-  //     callback(err);
-  //   }
-  // }
+//   return true;
+// } catch (err) {
+//   console.log(err);
+//   if (typeof err === 'string') {
+//     callback(err);
+//   }
+// }
 // };
 
 export const encrypt = async (key: Buffer, inputpath: string, outputPath: string) => {
@@ -137,4 +173,8 @@ export const isFile = (filePath: string) => {
 
 export const isDirectory = (dirPath: string) => {
   return fs.statSync(dirPath).isDirectory();
+};
+
+export const doesExist = (path: string) => {
+  accessSync(path);
 };

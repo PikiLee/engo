@@ -1,9 +1,11 @@
 import {generateKey, splitKey} from './../src/encrypt';
 import {expect, test, describe} from 'vitest';
-// import {zip} from '../src/encrypt';
+import {compress} from '../src/encrypt';
 // import fs from 'node:fs/promises';
 import {Buffer} from 'node:buffer';
 // const {existsSync} = require('node:fs');
+import {unlinkSync} from 'node:fs';
+import {join} from 'node:path';
 
 describe('test encrypt', () => {
   const password = 'goodjobpeople';
@@ -24,12 +26,22 @@ describe('test encrypt', () => {
     const buf = Buffer.alloc(77);
     expect(() => splitKey(buf)).toThrowError('even');
   });
-  // test('zip function', async () => {
-  //   const inputPath = 'C:\\Users\\root\\Desktop\\test\\engo-test\\dir';
-  //   const outputPath = 'C:\\Users\\root\\Desktop\\test\\zip-result.tgz';
-  //   expect(await zip(inputPath, outputPath)).toBe('succeed');
-  //   await fs.unlink(outputPath);
-  // });
+
+  test('compress directory', async () => {
+    const inputPath = 'C:\\Users\\root\\Desktop\\test\\engo-test\\dir';
+    const outputPath = 'C:\\Users\\root\\Desktop\\test\\engo-test';
+
+    expect(await compress(inputPath, outputPath)).toBe(join(outputPath, 'dir.zip'));
+    unlinkSync(join(outputPath, 'dir.zip'));
+  });
+
+  test('compress file', async () => {
+    const inputPath = 'C:\\Users\\root\\Desktop\\test\\engo-test\\toBeEnctypted.txt';
+    const outputPath = 'C:\\Users\\root\\Desktop\\test\\engo-test';
+
+    expect(await compress(inputPath, outputPath)).toBe(join(outputPath, 'toBeEnctypted.txt.zip'));
+    unlinkSync(join(outputPath, 'toBeEnctypted.txt.zip'));
+  });
 
   // test('test writing key to file', async () => {
   //   const key = Buffer.alloc(8, 'abcdefg');
