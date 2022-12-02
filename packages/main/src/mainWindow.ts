@@ -1,4 +1,4 @@
-import {startEncrypt} from './encrypt';
+// import {startEncrypt} from './encrypt';
 import {app, BrowserWindow, ipcMain} from 'electron';
 import {join} from 'path';
 import {URL} from 'url';
@@ -21,11 +21,11 @@ async function createWindow() {
     const res = await dialog.showOpenDialog({properties: [openType]});
     browserWindow.webContents.send('filePath', res.filePaths[0] ?? '');
   });
-  ipcMain.handle('startEncrypt', async (_, args: {inputPath: string; outputDir: string}) => {
-    await startEncrypt(args.inputPath, args.outputDir, (message: string) => {
-      browserWindow.webContents.send('encryptMsg', message);
-    });
-  });
+  // ipcMain.handle('startEncrypt', async (_, args: {inputPath: string; outputDir: string}) => {
+  //   await startEncrypt(args.inputPath, args.outputDir, (message: string) => {
+  //     browserWindow.webContents.send('encryptMsg', message);
+  //   });
+  // });
 
   /**
    * If the 'show' property of the BrowserWindow's constructor is omitted from the initialization options,

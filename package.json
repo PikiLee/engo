@@ -52,6 +52,7 @@
   },
   "dependencies": {
     "ant-design-vue": "^3.2.15",
+    "archiver": "^5.3.1",
     "compressing": "^1.6.2",
     "dayjs": "^1.11.6",
     "electron-updater": "5.3.0",

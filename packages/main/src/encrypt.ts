@@ -1,59 +1,36 @@
 const fs = require('node:fs');
 import {writeFile, readFile} from 'node:fs/promises';
 const compressing = require('compressing');
-const os = require('node:os');
+// const os = require('node:os');
 const path = require('node:path');
 const pump = require('pump');
 const crypto = require('node:crypto');
-const {keyObject} = require('node:crypto');
-const dayjs = require('dayjs');
+// const dayjs = require('dayjs');
+import {randomBytes, pbkdf2Sync} from 'node:crypto';
+import {Buffer} from 'node:buffer';
 
-export const startEncrypt = async (
-  input: string,
-  output: string,
-  callback: (message: string) => void,
-) => {
-  try {
-    let inputPath = path.normalize(input);
-    const outputDir = path.normalize(output);
-    if (!fs.existsSync(inputPath) || !fs.existsSync(outputDir)) throw '文件或目录不存在';
-    if (!isDirectory(outputDir)) throw '输出路径必须为文件';
-    let outputPath = path.join(
-      outputDir,
-      dayjs().format('YYYY-MM-DDTHH-mm-ss') + '-' + path.basename(inputPath),
-    );
+export const generateKey = (password: string) => {
+  const salt = randomBytes(16);
+  const key = pbkdf2Sync(password, salt, 1000, 64, 'sha512');
+  return {
+    kdfSalt: salt,
+    kdfKey: key,
+  };
+};
 
-    if (isDirectory(inputPath)) {
-      // zip
-      const tempDir = os.tmpdir();
-      const tempFile = path.join(tempDir, Math.random() + '.tgz');
+export const splitKey = (originalKey: Buffer) => {
+  const length = originalKey.length;
+  if (length % 2 !== 0 || length === 0) throw 'Please pass in a key with even number of bytes.';
+  const halfLength = length * 0.5;
+  const enKey = Buffer.alloc(halfLength);
+  const hashKey = Buffer.alloc(halfLength);
+  originalKey.copy(enKey, 0, 0, halfLength - 1);
+  originalKey.copy(hashKey, 0, 0, halfLength - 1);
 
-      await zip(inputPath, tempFile);
-      inputPath = tempFile;
-      outputPath = outputPath + '.tgz';
-    }
-
-    outputPath += '.nmsl';
-
-    const keyPath = './key';
-    let key: Buffer;
-    if (!fs.existsSync(keyPath)) {
-      key = await generateKey();
-      await writeKey(keyPath, key);
-    } else {
-      key = await readKey(keyPath);
-    }
-
-    await encrypt(key, inputPath, outputPath);
-    callback('加密成功');
-
-    return true;
-  } catch (err) {
-    console.log(err);
-    if (typeof err === 'string') {
-      callback(err);
-    }
-  }
+  return {
+    enKey,
+    hashKey,
+  };
 };
 
 export const zip = async (inputPath: string, outputPath: string): Promise<string> => {
@@ -69,6 +46,54 @@ export const zip = async (inputPath: string, outputPath: string): Promise<string
     }),
   );
 };
+
+// export const startEncrypt = async (
+//   input: string,
+//   output: string,
+//   callback: (message: string) => void,
+// ) => {
+  // try {
+  //   let inputPath = path.normalize(input);
+  //   const outputDir = path.normalize(output);
+  //   if (!fs.existsSync(inputPath) || !fs.existsSync(outputDir)) throw '文件或目录不存在';
+  //   if (!isDirectory(outputDir)) throw '输出路径必须为文件';
+  //   let outputPath = path.join(
+  //     outputDir,
+  //     dayjs().format('YYYY-MM-DDTHH-mm-ss') + '-' + path.basename(inputPath),
+  //   );
+
+  //   if (isDirectory(inputPath)) {
+  //     // zip
+  //     const tempDir = os.tmpdir();
+  //     const tempFile = path.join(tempDir, Math.random() + '.tgz');
+
+  //     await zip(inputPath, tempFile);
+  //     inputPath = tempFile;
+  //     outputPath = outputPath + '.tgz';
+  //   }
+
+  //   outputPath += '.nmsl';
+
+  //   const keyPath = './key';
+  //   let key: Buffer;
+  //   if (!fs.existsSync(keyPath)) {
+  //     key = await generateKey();
+  //     await writeKey(keyPath, key);
+  //   } else {
+  //     key = await readKey(keyPath);
+  //   }
+
+  //   await encrypt(key, inputPath, outputPath);
+  //   callback('加密成功');
+
+  //   return true;
+  // } catch (err) {
+  //   console.log(err);
+  //   if (typeof err === 'string') {
+  //     callback(err);
+  //   }
+  // }
+// };
 
 export const encrypt = async (key: Buffer, inputpath: string, outputPath: string) => {
   if (!fs.existsSync(outputPath)) {
@@ -91,18 +116,6 @@ export const encrypt = async (key: Buffer, inputpath: string, outputPath: string
           resolve('succeed');
         }
       });
-    });
-  });
-};
-
-export const generateKey = async (): Promise<Buffer> => {
-  return new Promise((resolve, reject) => {
-    crypto.generateKey('aes', {length: 256}, (err: string, key: typeof keyObject) => {
-      if (err) {
-        reject(err);
-      } else {
-        resolve(key.export());
-      }
     });
   });
 };
