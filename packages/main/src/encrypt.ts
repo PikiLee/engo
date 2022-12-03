@@ -13,12 +13,36 @@ import {createWriteStream, accessSync, createReadStream} from 'node:fs';
 import {join, basename, dirname, extname} from 'path';
 import {createHmac} from 'node:crypto';
 
-export const generateKey = (password: string) => {
-  const salt = randomBytes(16);
-  const key = pbkdf2Sync(password, salt, 1000, 64, 'sha512');
+/**
+ * Generate a key with pbkdf2
+ * @param {string} password
+ * @param {Object} options
+ * @property {number} options.saltLen - optional, default 16 bytes
+ * @property {number} options.iteration - optional, default 1000 bytes
+ * @property {number} options.keyLen - optional, default 64 bytes
+ * 
+ */
+export const generateKey = (
+  password: string,
+  options?: {
+    saltLen: number;
+    iteration: number;
+    keyLen: number;
+  },
+) => {
+  const opts = Object.assign({
+    saltLen: 16,
+    iteration: 1000,
+    keyLen: 64,
+  }, options);
+  const {saltLen, iteration, keyLen} = opts;
+
+  const salt = randomBytes(saltLen);
+  const key = pbkdf2Sync(password, salt, iteration, keyLen, 'sha512');
   return {
     kdfSalt: salt,
     kdfKey: key,
+    kdfIteration: iteration,
   };
 };
 
