@@ -274,7 +274,7 @@ export const createMetadata = (
   hash: string,
   ext: string,
 ) => {
-  return `${kdfAlgorithm}$${kdfIteration.toString().padStart(8, '0')}$${kdfSalt
+  return `${kdfAlgorithm}$${kdfIteration.toString().padEnd(8, '#')}$${kdfSalt
     .toString('hex')
     .padEnd(64, '#')}$${enAlgorithm}$${iv
     .toString('hex')
