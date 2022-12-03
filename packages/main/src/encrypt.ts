@@ -9,10 +9,18 @@ const dayjs = require('dayjs');
 import {randomBytes, pbkdf2Sync} from 'node:crypto';
 import {Buffer} from 'node:buffer';
 const archiver = require('archiver');
-import {createWriteStream, accessSync, createReadStream, appendFileSync} from 'node:fs';
+import {
+  createWriteStream,
+  accessSync,
+  createReadStream,
+  appendFileSync,
+  mkdtempSync,
+  unlinkSync,
+} from 'node:fs';
 // import {fileURLToPath} from 'node:url';
 import {join, basename, dirname, extname} from 'path';
 import {createHmac} from 'node:crypto';
+import {tmpdir} from 'node:os';
 
 /**
  * Generate a key with pbkdf2
@@ -27,9 +35,9 @@ import {createHmac} from 'node:crypto';
 export const generateKey = (
   password: string,
   options?: {
-    saltLen: number;
-    iteration: number;
-    keyLen: number;
+    saltLen?: number;
+    iteration?: number;
+    keyLen?: number;
     algorithm?: HashAlgorithm;
   },
 ) => {
@@ -75,7 +83,7 @@ export const splitKey = (originalKey: Buffer) => {
  * @param {Object} options
  * @property {string} options.outputDir - optional
  * @property {string} options.outputFilename - optional
- *
+ * @return {Promise<string>} output compressed file path
  */
 export const compress = async (
   inputPath: string,
@@ -125,63 +133,15 @@ export const compress = async (
   return res;
 };
 
-// export const startEncrypt = async (
-//   input: string,
-//   output: string,
-//   callback: (message: string) => void,
-// ) => {
-// try {
-//   let inputPath = path.normalize(input);
-//   const outputDir = path.normalize(output);
-//   if (!fs.existsSync(inputPath) || !fs.existsSync(outputDir)) throw '文件或目录不存在';
-//   if (!isDirectory(outputDir)) throw '输出路径必须为文件';
-//   let outputPath = path.join(
-//     outputDir,
-//     dayjs().format('YYYY-MM-DDTHH-mm-ss') + '-' + path.basename(inputPath),
-//   );
-
-//   if (isDirectory(inputPath)) {
-//     // zip
-//     const tempDir = os.tmpdir();
-//     const tempFile = path.join(tempDir, Math.random() + '.tgz');
-
-//     await zip(inputPath, tempFile);
-//     inputPath = tempFile;
-//     outputPath = outputPath + '.tgz';
-//   }
-
-//   outputPath += '.nmsl';
-
-//   const keyPath = './key';
-//   let key: Buffer;
-//   if (!fs.existsSync(keyPath)) {
-//     key = await generateKey();
-//     await writeKey(keyPath, key);
-//   } else {
-//     key = await readKey(keyPath);
-//   }
-
-//   await encrypt(key, inputPath, outputPath);
-//   callback('加密成功');
-
-//   return true;
-// } catch (err) {
-//   console.log(err);
-//   if (typeof err === 'string') {
-//     callback(err);
-//   }
-// }
-// };
-
 /**
  * Encrypt a file.
  * @param {Buffer} key - Encryption Key
  * @param {string} inputPath
  * @param {Object} options
  * @property {EnAlgorithm} options.algorithm
- * @property {string} options.utputDir
- * @property {string} options.utputFilename
- * @property {boolean} options.addTime - whether or not add current time in the name of output file.
+ * @property {string} options.outputDir
+ * @property {string} options.outputFilename
+ * @property {boolean} options.addTime - whether or not add current time in the name of output file, default true
  */
 export const encrypt = async (
   key: Buffer,
@@ -246,6 +206,9 @@ export const encrypt = async (
  * @param {string} filePath
  * @param {Object} options
  * @property {HashAlgorithm} options.algorithm
+ * @return {Promise<Object>}
+ * @property {string} return.hash
+ * @property {string} return.algorithm
  */
 export const HMAC = (
   hashKey: Buffer,
@@ -308,6 +271,84 @@ export const createMetadata = (
     .padEnd(64, '#')}$${enAlgorithm}}$${iv
     .toString('hex')
     .padEnd(64, '#')}$${hashAlgorithm}$${hash.padEnd(64, '#')}$${ext.padEnd(8, '#')}`;
+};
+
+/**
+ * Start Encrypt File or Directory
+ * @param {string} password
+ * @param {string} inputPath
+ * @param {Function} callback - callback to call at the end
+ * @param {Object} options
+ * @property {string} options.outputDir - specify the output directory, default the directory where the input file is in.
+ */
+export const startEncrypt = async (
+  password: string,
+  inputPath: string,
+  callback: (message: string) => void,
+  options?: {
+    outputDir?: string;
+  },
+) => {
+  try {
+    const isInputFile = isFile(inputPath);
+    const inputDir = dirname(inputPath);
+    const opts = Object.assign(
+      {
+        outputDir: inputDir,
+      },
+      options,
+    );
+    const {outputDir} = opts;
+    if (!isDirectory(outputDir)) throw '输出路径必须为文件';
+
+    if (!isInputFile) {
+      // compress
+      const tempDir = mkdtempSync(join(tmpdir(), 'engo-'));
+      const tempFilename = 'temp-file';
+
+      inputPath = await compress(inputPath, {
+        outputDir: tempDir,
+        outputFilename: tempFilename,
+      });
+    }
+
+    const {kdfSalt, kdfIteration, kdfKey, kdfAlgorithm} = generateKey(password);
+    const {enKey, hashKey} = splitKey(kdfKey);
+
+    const {
+      algorithm: enAlgorithm,
+      iv,
+      outputPath,
+      ext,
+    } = await encrypt(enKey, inputPath, {
+      outputDir: outputDir,
+    });
+    const {hash, algorithm: hashAlgorithm} = await HMAC(hashKey, outputPath);
+    const metadata = createMetadata(
+      kdfAlgorithm,
+      kdfIteration,
+      kdfSalt,
+      enAlgorithm,
+      iv,
+      hashAlgorithm,
+      hash,
+      ext,
+    );
+    writeMetadataToFile(outputPath, metadata);
+
+    if (!isInputFile) {
+      unlinkSync(inputPath);
+    }
+    callback('加密成功');
+
+    return outputPath;
+  } catch (err) {
+    console.log(err);
+    if (typeof err === 'string') {
+      callback('error');
+    }
+    return 'error';
+  }
 };
 
 export const writeKey = async (outputPath: string, key: Buffer) => {

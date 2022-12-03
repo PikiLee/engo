@@ -1,5 +1,5 @@
 import {HashAlgorithm, EnAlgorithm} from './../src/algorithms';
-import {generateKey, splitKey, createMetadata} from './../src/encrypt';
+import {generateKey, splitKey, createMetadata, startEncrypt} from './../src/encrypt';
 import {expect, test, describe} from 'vitest';
 import {compress} from '../src/encrypt';
 // import fs from 'node:fs/promises';
@@ -12,7 +12,7 @@ import {HMAC} from './../src/encrypt';
 
 const password = 'goodjobpeople';
 const inputPath = 'C:\\Users\\root\\Desktop\\test\\engo-test\\toBeEnctypted.txt';
-
+const outputDir = 'C:\\Users\\root\\Desktop\\test\\engo-test';
 describe('test generate key', () => {
   test('generate key', () => {
     const {kdfSalt, kdfKey} = generateKey(password);
@@ -41,14 +41,6 @@ describe('test split key', () => {
   //   const fileKey = await readKey(outputPath);
   //   expect(Buffer.compare(key, fileKey)).toBe(0);
   //   await fs.unlink(outputPath);
-  // });
-
-  // test('test startEncrypt function', async () => {
-  //   const inputPath = 'C:\\Users\\root\\Desktop\\test\\engo-test\\toBeEnctypted.txt';
-  //   const outputPath = 'C:\\Users\\root\\Desktop\\test\\engo-test';
-
-  //   expect(await startEncrypt(inputPath, outputPath)).toBe(true);
-  //   await fs.unlink('./key');
   // });
 });
 
@@ -120,5 +112,22 @@ describe('test create metadata', () => {
       createMetadata(kdfAlgorithm, kdfIteration, kdfSalt, enAlgorithm, iv, hashAlgorithm, hash, ext)
         .length,
     ).toBe(218);
+  });
+});
+
+describe('test startEncrypt function', () => {
+  test('test startEncrypt function', async () => {
+    const outputPath = await startEncrypt(
+      password,
+      inputPath,
+      message => {
+        console.log(message);
+      },
+      {
+        outputDir,
+      },
+    );
+    expect(accessSync(outputPath)).toBe(undefined);
+    unlinkSync(outputPath);
   });
 });
