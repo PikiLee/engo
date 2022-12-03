@@ -2,7 +2,7 @@ import {HashAlgorithm, EnAlgorithm} from './algorithms';
 const pump = require('pump');
 const dayjs = require('dayjs');
 import {randomBytes, pbkdf2Sync} from 'node:crypto';
-import {Buffer} from 'node:buffer';
+import type {Buffer} from 'node:buffer';
 const archiver = require('archiver');
 import {
   createWriteStream,
@@ -34,6 +34,7 @@ import {isFile, isDirectory, doesExist} from './utils';
 export const generateKey = (
   password: string,
   options?: {
+    salt?: Buffer;
     saltLen?: number;
     iteration?: number;
     keyLen?: number;
@@ -49,9 +50,9 @@ export const generateKey = (
     },
     options,
   );
-  const {saltLen, iteration, keyLen, algorithm} = opts;
+  const {salt: passInSalt, saltLen, iteration, keyLen, algorithm} = opts;
 
-  const salt = randomBytes(saltLen);
+  const salt = passInSalt ?? randomBytes(saltLen);
   const key = pbkdf2Sync(password, salt, iteration, keyLen, HashAlgorithm[algorithm]);
   return {
     kdfSalt: salt,
@@ -62,21 +63,27 @@ export const generateKey = (
 };
 
 /**
- * Split one key into two keys with equal length.
+ * Split one key into multiple keys.
  */
-export const splitKey = (originalKey: Buffer) => {
+export const splitKey = (originalKey: Buffer, lens: number[]) => {
+  const lensCopy = [...lens];
   const length = originalKey.length;
-  if (length % 2 !== 0 || length === 0) throw 'Please pass in a key with even number of bytes.';
-  const halfLength = length * 0.5;
-  const enKey = Buffer.alloc(halfLength);
-  const hashKey = Buffer.alloc(halfLength);
-  originalKey.copy(enKey, 0, 0, halfLength - 1);
-  originalKey.copy(hashKey, 0, 0, halfLength - 1);
+  const sum = lens.reduce((pv, cv) => pv + cv);
+  if (sum > length || length === 0 || lens.length === 0) throw 'Please pass in correct lens.';
+  if (sum < length) lensCopy.push(length - sum);
 
-  return {
-    enKey,
-    hashKey,
-  };
+  interface Key {
+    key: Buffer;
+    len: number;
+  }
+  const resultKeys: Key[] = [];
+  let index = 0;
+  lensCopy.forEach(len => {
+    resultKeys.push({key: originalKey.subarray(index, index + len), len});
+    index += len;
+  });
+
+  return resultKeys;
 };
 
 /**
@@ -271,24 +278,27 @@ export const writeMetadataToFile = (filePath: string, metadata: string) => {
 /**
  * Create metadata essential for decryption.
  */
-export const createMetadata = (
-  kdfAlgorithm: HashAlgorithm,
-  kdfIteration: number,
-  kdfSalt: Buffer,
-  enAlgorithm: EnAlgorithm,
-  iv: Buffer,
-  hashAlgorithm: HashAlgorithm,
-  hash: string,
-  ext: string,
-) => {
-  let str = `${kdfAlgorithm}$${kdfIteration.toString().padEnd(8, '#')}$${kdfSalt
-    .toString('hex')
-    .padEnd(64, '#')}$${enAlgorithm}$${iv
-    .toString('hex')
-    .padEnd(64, '#')}$${hashAlgorithm}$${hash.padEnd(128, '#')}$${ext.padEnd(8, '#')}`;
+export const createMetadata = (data: (number | string | Buffer)[], version = 0) => {
+  let str = '';
+  data.forEach((d, index) => {
+    if (index !== 0) {
+      str += '$';
+    }
+    if (typeof d === 'number') {
+      str += d.toString();
+      return;
+    }
+    if (typeof d === 'string') {
+      str += d;
+      return;
+    }
+    str += d.toString('hex');
+  });
+
+  str += `$${version.toString()}`;
 
   const length = str.length + 9;
-  str += `$${length.toString().padEnd(8, '#')}`;
+  str += `$${length.toString().padStart(8, '0')}`;
   return str;
 };
 
@@ -333,7 +343,10 @@ export const startEncrypt = async (
     }
 
     const {kdfSalt, kdfIteration, kdfKey, kdfAlgorithm} = generateKey(password);
-    const {enKey, hashKey} = splitKey(kdfKey);
+    const [{key: enKey, len: enKeyLen}, {key: hashKey, len: hashKeyLen}] = splitKey(
+      kdfKey,
+      [32, 32],
+    );
 
     const {
       algorithm: enAlgorithm,
@@ -344,16 +357,18 @@ export const startEncrypt = async (
       outputDir: outputDir,
     });
     const {hash, algorithm: hashAlgorithm} = await HMAC(hashKey, outputPath);
-    const metadata = createMetadata(
+    const metadata = createMetadata([
       kdfAlgorithm,
       kdfIteration,
       kdfSalt,
       enAlgorithm,
       iv,
+      enKeyLen,
       hashAlgorithm,
       hash,
+      hashKeyLen,
       ext,
-    );
+    ]);
     writeMetadataToFile(outputPath, metadata);
 
     if (!isInputFile) {

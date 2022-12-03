@@ -98,7 +98,7 @@ describe('test HMAC', () => {
 
 describe('test create metadata', () => {
   const kdfAlgorithm = HashAlgorithm['sha512'];
-  const kdfIteration = 10000;
+  const kdfIteration = 100000;
   const kdfSalt = Buffer.alloc(16);
   const enAlgorithm = EnAlgorithm['aes-256-ctr'];
   const iv = Buffer.alloc(16);
@@ -108,7 +108,7 @@ describe('test create metadata', () => {
   const hashKeyLen = 32;
   const ext = '.zip';
   test('create metadata', () => {
-    const metadata = createMetadata(
+    const metadata = createMetadata([
       kdfAlgorithm,
       kdfIteration,
       kdfSalt,
@@ -119,8 +119,9 @@ describe('test create metadata', () => {
       hash,
       hashKeyLen,
       ext,
-    );
-    expect(metadata.length).toBe(309);
+    ]);
+    const length = metadata.length;
+    expect(Number(metadata.substring(length - 8))).toBe(length);
   });
 });
 
