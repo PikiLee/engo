@@ -51,6 +51,7 @@
     "vue-tsc": "1.0.9"
   },
   "dependencies": {
+    "@types/node": "^18.11.10",
     "ant-design-vue": "^3.2.15",
     "archiver": "^5.3.1",
     "compressing": "^1.6.2",

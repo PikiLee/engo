@@ -274,11 +274,15 @@ export const createMetadata = (
   hash: string,
   ext: string,
 ) => {
-  return `${kdfAlgorithm}$${kdfIteration.toString().padEnd(8, '#')}$${kdfSalt
+  let str = `${kdfAlgorithm}$${kdfIteration.toString().padEnd(8, '#')}$${kdfSalt
     .toString('hex')
     .padEnd(64, '#')}$${enAlgorithm}$${iv
     .toString('hex')
     .padEnd(64, '#')}$${hashAlgorithm}$${hash.padEnd(128, '#')}$${ext.padEnd(8, '#')}`;
+
+  const length = str.length + 9;
+  str += `$${length.toString().padEnd(8, '#')}`;
+  return str;
 };
 
 /**

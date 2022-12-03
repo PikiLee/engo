@@ -116,7 +116,7 @@ describe('test create metadata', () => {
       hash,
       ext,
     );
-    expect(metadata.length).toBe(282);
+    expect(metadata.length).toBe(291);
   });
 });
 

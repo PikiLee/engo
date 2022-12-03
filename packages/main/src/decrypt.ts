@@ -1,17 +1,19 @@
 import {statSync, createReadStream} from 'node:fs';
-
+// import {typeBufferEncoding}
 /**
- * retrieve metadata string from encrypted file.
+ * retrieve string from the end of encrypted file.
  */
-export const readMetaDataFromFile = (
+export const readFileFromBack = (
   filePath: string,
   options?: {
-    len: number;
+    len?: number;
+    encoding?: BufferEncoding;
   },
 ) => {
-  const {len} = Object.assign(
+  const {len, encoding} = Object.assign(
     {
-      len: 282,
+      len: 8,
+      encoding: 'utf8',
     },
     options,
   );
@@ -19,30 +21,43 @@ export const readMetaDataFromFile = (
   const size = statSync(filePath).size;
   const readable = createReadStream(filePath, {
     start: size - len,
-    encoding: 'utf8',
+    encoding: encoding,
   });
 
   return new Promise<string>(resolve => {
     readable.on('readable', () => {
-      let metadata = '';
-      let data: string;
-      while ((data = readable.read()) !== null) {
-        metadata += data;
+      let data = '';
+      let d: string;
+      while ((d = readable.read()) !== null) {
+        data += d;
       }
 
       readable.destroy();
 
-      resolve(metadata);
+      resolve(data);
     });
   });
 };
 
 /**
- * Retrieve metadata from string.
+ * Retrieve metadata from file.
  */
-export const retrieveMetaData = (data: string) => {
-  const [kdfAlgorithm, kdfIteration, kdfSalt, enAlgorithm, iv, hashAlgorithm, hash, ext] =
-    data.split('$');
+export const retrieveMetaData = async (filePath: string) => {
+  const length = Number(removeChar(await readFileFromBack(filePath)));
+  const metadataStr = await readFileFromBack(filePath, {
+    len: length,
+  });
+  const [
+    kdfAlgorithm,
+    kdfIteration,
+    kdfSalt,
+    enAlgorithm,
+    iv,
+    hashAlgorithm,
+    hash,
+    ext,
+    _,
+  ] = metadataStr.split('$');
   return {
     kdfAlgorithm,
     kdfIteration: removeChar(kdfIteration),
@@ -52,6 +67,7 @@ export const retrieveMetaData = (data: string) => {
     hashAlgorithm: hashAlgorithm,
     hash: removeChar(hash),
     ext: removeChar(ext),
+    metadataLen: length,
   };
 };
 
@@ -70,3 +86,4 @@ export const removeChar = (
   return str.replaceAll(char, '');
 };
 
+// export const authVerify = (filePath: string) => {};
