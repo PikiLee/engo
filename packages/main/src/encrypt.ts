@@ -1,10 +1,5 @@
 import {HashAlgorithm, EnAlgorithm} from './algorithms';
-const fs = require('node:fs');
-import {writeFile, readFile} from 'node:fs/promises';
-// const os = require('node:os');
-const path = require('node:path');
 const pump = require('pump');
-const crypto = require('node:crypto');
 const dayjs = require('dayjs');
 import {randomBytes, pbkdf2Sync} from 'node:crypto';
 import {Buffer} from 'node:buffer';
@@ -16,8 +11,9 @@ import {
   appendFileSync,
   mkdtempSync,
   unlinkSync,
+  statSync,
 } from 'node:fs';
-// import {fileURLToPath} from 'node:url';
+import {createCipheriv} from 'node:crypto';
 import {join, basename, dirname, extname} from 'path';
 import {createHmac} from 'node:crypto';
 import {tmpdir} from 'node:os';
@@ -30,7 +26,11 @@ import {tmpdir} from 'node:os';
  * @property {number} options.iteration - optional, default 100000 bytes
  * @property {number} options.keyLen - optional, default 64 bytes
  * @property {HashAlgorithm} options.algorithm - optional, default sha512
- *
+ * @return {Object}
+ * @property {Buffer} return.kdfKey
+ * @property {Buffer} return.kdfSalt
+ * @property {Buffer} return.kdfIteration
+ * @property {Buffer} return.kdfAlgorithm
  */
 export const generateKey = (
   password: string,
@@ -62,6 +62,9 @@ export const generateKey = (
   };
 };
 
+/**
+ * Split one key into two keys with equal length.
+ */
 export const splitKey = (originalKey: Buffer) => {
   const length = originalKey.length;
   if (length % 2 !== 0 || length === 0) throw 'Please pass in a key with even number of bytes.';
@@ -85,7 +88,7 @@ export const splitKey = (originalKey: Buffer) => {
  * @property {string} options.outputFilename - optional
  * @return {Promise<string>} output compressed file path
  */
-export const compress = async (
+export const compress = (
   inputPath: string,
   options?: {
     outputDir?: string;
@@ -142,6 +145,7 @@ export const compress = async (
  * @property {string} options.outputDir
  * @property {string} options.outputFilename
  * @property {boolean} options.addTime - whether or not add current time in the name of output file, default true
+ * @property {boolean} options.outputExt - the extension of output file, default .nmsl
  */
 export const encrypt = async (
   key: Buffer,
@@ -151,6 +155,7 @@ export const encrypt = async (
     outputDir?: string;
     outputFilename?: string;
     addTime?: boolean;
+    outputExt?: string;
   },
 ) => {
   const inputDir = dirname(inputPath);
@@ -162,19 +167,20 @@ export const encrypt = async (
       outputDir: inputDir,
       outputFilename: inputFilename,
       addTime: true,
+      outputExt: '.nmsl',
     },
     options,
   );
-  const {algorithm, outputDir, outputFilename, addTime} = opts;
+  const {algorithm, outputDir, outputFilename, addTime, outputExt} = opts;
 
   const iv = randomBytes(16);
 
   const outputPath = addTime
-    ? join(outputDir, dayjs().format('YYYY-MM-DDTHH-mm-ss') + '__' + outputFilename + '.nmsl')
-    : join(outputDir, outputFilename + '.nmsl');
+    ? join(outputDir, dayjs().format('YYYY-MM-DDTHH-mm-ss') + '__' + outputFilename + outputExt)
+    : join(outputDir, outputFilename + outputExt);
 
-  const readable = fs.createReadStream(inputPath);
-  const writeable = fs.createWriteStream(outputPath);
+  const readable = createReadStream(inputPath);
+  const writeable = createWriteStream(outputPath);
 
   return new Promise<{
     enKey: Buffer;
@@ -183,7 +189,7 @@ export const encrypt = async (
     outputPath: string;
     ext: string;
   }>((resolve, reject) => {
-    const cipher = crypto.createCipheriv(EnAlgorithm[algorithm], key, iv);
+    const cipher = createCipheriv(EnAlgorithm[algorithm], key, iv);
     pump(readable, cipher, writeable, (err: string) => {
       if (err) {
         reject(err);
@@ -279,7 +285,8 @@ export const createMetadata = (
  * @param {string} inputPath
  * @param {Function} callback - callback to call at the end
  * @param {Object} options
- * @property {string} options.outputDir - specify the output directory, default the directory where the input file is in.
+ * @property {string} options.outputDir - specify the output directory, default the directory where the input file is in
+ * @return {string} - error or output file path
  */
 export const startEncrypt = async (
   password: string,
@@ -351,23 +358,23 @@ export const startEncrypt = async (
   }
 };
 
-export const writeKey = async (outputPath: string, key: Buffer) => {
-  const outPath = path.normalize(outputPath);
-  await writeFile(outPath, key);
-};
+// export const writeKey = async (outputPath: string, key: Buffer) => {
+//   const outPath = path.normalize(outputPath);
+//   await writeFile(outPath, key);
+// };
 
-export const readKey = async (filePath: string) => {
-  const fPath = path.normalize(filePath);
-  const fileKey = await readFile(fPath);
-  return fileKey;
-};
+// export const readKey = async (filePath: string) => {
+//   const fPath = path.normalize(filePath);
+//   const fileKey = await readFile(fPath);
+//   return fileKey;
+// };
 
 export const isFile = (filePath: string) => {
-  return fs.statSync(filePath).isFile();
+  return statSync(filePath).isFile();
 };
 
 export const isDirectory = (dirPath: string) => {
-  return fs.statSync(dirPath).isDirectory();
+  return statSync(dirPath).isDirectory();
 };
 
 export const doesExist = (path: string) => {
