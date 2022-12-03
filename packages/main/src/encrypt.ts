@@ -6,17 +6,16 @@ import {Buffer} from 'node:buffer';
 const archiver = require('archiver');
 import {
   createWriteStream,
-  accessSync,
   createReadStream,
   appendFileSync,
   mkdtempSync,
   unlinkSync,
-  statSync,
 } from 'node:fs';
 import {createCipheriv} from 'node:crypto';
 import {join, basename, dirname, extname} from 'path';
 import {createHmac} from 'node:crypto';
 import {tmpdir} from 'node:os';
+import {isFile, isDirectory, doesExist} from './utils';
 
 /**
  * Generate a key with pbkdf2
@@ -105,7 +104,8 @@ export const compress = (
     options,
   );
   const {outputDir, outputFilename} = opts;
-  doesExist(inputPath);
+
+  if (!doesExist(inputPath)) throw '输入文件不存在';
   if (!isDirectory(outputDir)) throw '必须是目录';
   const outputFile = join(outputDir, outputFilename + '.zip');
   const output = createWriteStream(outputFile);
@@ -368,15 +368,3 @@ export const startEncrypt = async (
 //   const fileKey = await readFile(fPath);
 //   return fileKey;
 // };
-
-export const isFile = (filePath: string) => {
-  return statSync(filePath).isFile();
-};
-
-export const isDirectory = (dirPath: string) => {
-  return statSync(dirPath).isDirectory();
-};
-
-export const doesExist = (path: string) => {
-  accessSync(path);
-};
