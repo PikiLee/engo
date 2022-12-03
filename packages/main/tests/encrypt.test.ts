@@ -1,4 +1,5 @@
-import {generateKey, splitKey} from './../src/encrypt';
+import {HashAlgorithm, EnAlgorithm} from './../src/algorithms';
+import {generateKey, splitKey, createMetadata} from './../src/encrypt';
 import {expect, test, describe} from 'vitest';
 import {compress} from '../src/encrypt';
 // import fs from 'node:fs/promises';
@@ -102,5 +103,22 @@ describe('test HMAC', () => {
   test('test generate HMAC', async () => {
     const hashKey = Buffer.alloc(64, 'a');
     expect((await HMAC(hashKey, inputPath)).hash.length).toBe(128);
+  });
+});
+
+describe('test create metadata', () => {
+  const kdfAlgorithm = HashAlgorithm['sha512'];
+  const kdfIteration = 10000;
+  const kdfSalt = Buffer.alloc(16);
+  const enAlgorithm = EnAlgorithm['aes-256-ctr'];
+  const iv = Buffer.alloc(16);
+  const hashAlgorithm = HashAlgorithm['sha512'];
+  const hash = '123123123';
+  const ext = '.zip';
+  test('create metadata', () => {
+    expect(
+      createMetadata(kdfAlgorithm, kdfIteration, kdfSalt, enAlgorithm, iv, hashAlgorithm, hash, ext)
+        .length,
+    ).toBe(218);
   });
 });

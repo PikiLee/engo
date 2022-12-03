@@ -1,3 +1,4 @@
+import {HashAlgorithm, EnAlgorithm} from './algorithms';
 const fs = require('node:fs');
 import {writeFile, readFile} from 'node:fs/promises';
 // const os = require('node:os');
@@ -8,7 +9,7 @@ const dayjs = require('dayjs');
 import {randomBytes, pbkdf2Sync} from 'node:crypto';
 import {Buffer} from 'node:buffer';
 const archiver = require('archiver');
-import {createWriteStream, accessSync, createReadStream} from 'node:fs';
+import {createWriteStream, accessSync, createReadStream, appendFileSync} from 'node:fs';
 // import {fileURLToPath} from 'node:url';
 import {join, basename, dirname, extname} from 'path';
 import {createHmac} from 'node:crypto';
@@ -18,9 +19,10 @@ import {createHmac} from 'node:crypto';
  * @param {string} password
  * @param {Object} options
  * @property {number} options.saltLen - optional, default 16 bytes
- * @property {number} options.iteration - optional, default 1000 bytes
+ * @property {number} options.iteration - optional, default 100000 bytes
  * @property {number} options.keyLen - optional, default 64 bytes
- * 
+ * @property {HashAlgorithm} options.algorithm - optional, default sha512
+ *
  */
 export const generateKey = (
   password: string,
@@ -28,21 +30,27 @@ export const generateKey = (
     saltLen: number;
     iteration: number;
     keyLen: number;
+    algorithm?: HashAlgorithm;
   },
 ) => {
-  const opts = Object.assign({
-    saltLen: 16,
-    iteration: 1000,
-    keyLen: 64,
-  }, options);
-  const {saltLen, iteration, keyLen} = opts;
+  const opts = Object.assign(
+    {
+      saltLen: 16,
+      iteration: 100000,
+      keyLen: 64,
+      algorithm: HashAlgorithm['sha512'],
+    },
+    options,
+  );
+  const {saltLen, iteration, keyLen, algorithm} = opts;
 
   const salt = randomBytes(saltLen);
-  const key = pbkdf2Sync(password, salt, iteration, keyLen, 'sha512');
+  const key = pbkdf2Sync(password, salt, iteration, keyLen, HashAlgorithm[algorithm]);
   return {
     kdfSalt: salt,
     kdfKey: key,
     kdfIteration: iteration,
+    kdfAlgorithm: algorithm,
   };
 };
 
@@ -170,7 +178,7 @@ export const compress = async (
  * @param {Buffer} key - Encryption Key
  * @param {string} inputPath
  * @param {Object} options
- * @property {string} options.algorithm
+ * @property {EnAlgorithm} options.algorithm
  * @property {string} options.utputDir
  * @property {string} options.utputFilename
  * @property {boolean} options.addTime - whether or not add current time in the name of output file.
@@ -179,7 +187,7 @@ export const encrypt = async (
   key: Buffer,
   inputPath: string,
   options?: {
-    algorithm?: string;
+    algorithm?: EnAlgorithm;
     outputDir?: string;
     outputFilename?: string;
     addTime?: boolean;
@@ -190,7 +198,7 @@ export const encrypt = async (
   const inputFilename = basename(inputPath, inputFileExt);
   const opts = Object.assign(
     {
-      algorithm: 'aes-256-ctr',
+      algorithm: EnAlgorithm['aes-256-ctr'],
       outputDir: inputDir,
       outputFilename: inputFilename,
       addTime: true,
@@ -210,12 +218,12 @@ export const encrypt = async (
 
   return new Promise<{
     enKey: Buffer;
-    algorithm: string;
+    algorithm: EnAlgorithm;
     iv: Buffer;
     outputPath: string;
     ext: string;
   }>((resolve, reject) => {
-    const cipher = crypto.createCipheriv(algorithm, key, iv);
+    const cipher = crypto.createCipheriv(EnAlgorithm[algorithm], key, iv);
     pump(readable, cipher, writeable, (err: string) => {
       if (err) {
         reject(err);
@@ -237,30 +245,30 @@ export const encrypt = async (
  * @param {Buffer} hashKey
  * @param {string} filePath
  * @param {Object} options
- * @property {string} options.algorithm
+ * @property {HashAlgorithm} options.algorithm
  */
 export const HMAC = (
   hashKey: Buffer,
   filePath: string,
   options?: {
-    algorithm?: string;
+    algorithm?: HashAlgorithm;
   },
 ) => {
   const opts = Object.assign(
     {
-      algorithm: 'sha-512',
+      algorithm: HashAlgorithm['sha512'],
     },
     options,
   );
 
   const {algorithm} = opts;
 
-  const hmac = createHmac(algorithm, hashKey);
+  const hmac = createHmac(HashAlgorithm[algorithm], hashKey);
   const input = createReadStream(filePath);
 
   return new Promise<{
     hash: string;
-    algorithm: string;
+    algorithm: HashAlgorithm;
   }>((resolve, reject) => {
     input.on('error', err => {
       console.log(err);
@@ -276,6 +284,30 @@ export const HMAC = (
 
     input.pipe(hmac);
   });
+};
+
+export const writeMetadataToFile = (filePath: string, metadata: string) => {
+  appendFileSync(filePath, metadata);
+};
+
+/**
+ * Create metadata essential for decryption.
+ */
+export const createMetadata = (
+  kdfAlgorithm: HashAlgorithm,
+  kdfIteration: number,
+  kdfSalt: Buffer,
+  enAlgorithm: EnAlgorithm,
+  iv: Buffer,
+  hashAlgorithm: HashAlgorithm,
+  hash: string,
+  ext: string,
+) => {
+  return `${kdfAlgorithm}${kdfIteration.toString().padStart(8, '0')}$${kdfSalt
+    .toString('hex')
+    .padEnd(64, '#')}$${enAlgorithm}}$${iv
+    .toString('hex')
+    .padEnd(64, '#')}$${hashAlgorithm}$${hash.padEnd(64, '#')}$${ext.padEnd(8, '#')}`;
 };
 
 export const writeKey = async (outputPath: string, key: Buffer) => {
