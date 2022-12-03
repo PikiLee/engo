@@ -106,10 +106,17 @@ describe('test create metadata', () => {
   const hash = '123123123';
   const ext = '.zip';
   test('create metadata', () => {
-    expect(
-      createMetadata(kdfAlgorithm, kdfIteration, kdfSalt, enAlgorithm, iv, hashAlgorithm, hash, ext)
-        .length,
-    ).toBe(218);
+    const metadata = createMetadata(
+      kdfAlgorithm,
+      kdfIteration,
+      kdfSalt,
+      enAlgorithm,
+      iv,
+      hashAlgorithm,
+      hash,
+      ext,
+    );
+    expect(metadata.length).toBe(282);
   });
 });
 

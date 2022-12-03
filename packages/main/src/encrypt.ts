@@ -256,7 +256,9 @@ export const HMAC = (
 };
 
 export const writeMetadataToFile = (filePath: string, metadata: string) => {
-  appendFileSync(filePath, metadata);
+  appendFileSync(filePath, metadata, {
+    encoding: 'utf8',
+  });
 };
 
 /**
@@ -272,11 +274,11 @@ export const createMetadata = (
   hash: string,
   ext: string,
 ) => {
-  return `${kdfAlgorithm}${kdfIteration.toString().padStart(8, '0')}$${kdfSalt
+  return `${kdfAlgorithm}$${kdfIteration.toString().padStart(8, '0')}$${kdfSalt
     .toString('hex')
-    .padEnd(64, '#')}$${enAlgorithm}}$${iv
+    .padEnd(64, '#')}$${enAlgorithm}$${iv
     .toString('hex')
-    .padEnd(64, '#')}$${hashAlgorithm}$${hash.padEnd(64, '#')}$${ext.padEnd(8, '#')}`;
+    .padEnd(64, '#')}$${hashAlgorithm}$${hash.padEnd(128, '#')}$${ext.padEnd(8, '#')}`;
 };
 
 /**
