@@ -221,19 +221,26 @@ export const HMAC = (
   filePath: string,
   options?: {
     algorithm?: HashAlgorithm;
+    start?: number;
+    end?: number;
   },
 ) => {
   const opts = Object.assign(
     {
       algorithm: HashAlgorithm['sha512'],
+      start: 0,
+      end: Infinity,
     },
     options,
   );
 
-  const {algorithm} = opts;
+  const {start, end, algorithm} = opts;
 
   const hmac = createHmac(HashAlgorithm[algorithm], hashKey);
-  const input = createReadStream(filePath);
+  const input = createReadStream(filePath, {
+    start,
+    end,
+  });
 
   return new Promise<{
     hash: string;

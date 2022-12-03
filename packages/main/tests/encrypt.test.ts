@@ -22,14 +22,14 @@ describe('test generate key', () => {
 describe('test split key', () => {
   test('Split key into enctyption key and hash key.', () => {
     const {kdfKey} = generateKey(password);
-    const {enKey, hashKey} = splitKey(kdfKey);
+    const [{key: enKey}, {key: hashKey}] = splitKey(kdfKey, [32, 32]);
     expect(enKey.length).toBe(32);
     expect(hashKey.length).toBe(32);
   });
 
   test('Throws with splitKey', () => {
     const buf = Buffer.alloc(77);
-    expect(() => splitKey(buf)).toThrowError('even');
+    expect(() => splitKey(buf, [55, 100])).toThrowError('pass in');
   });
 
   // test('test writing key to file', async () => {
@@ -68,7 +68,7 @@ describe('test encrypt file', () => {
   const inputPath = 'C:\\Users\\root\\Desktop\\test\\engo-test\\toBeEnctypted.txt';
   const outputDir = 'C:\\Users\\root\\Desktop\\test\\engo-test';
   const {kdfKey} = generateKey(password);
-  const {enKey} = splitKey(kdfKey);
+  const [{key: enKey}] = splitKey(kdfKey, [32, 32]);
 
   test('test enctyption function', async () => {
     const res = await encrypt(enKey, inputPath, {
@@ -102,8 +102,10 @@ describe('test create metadata', () => {
   const kdfSalt = Buffer.alloc(16);
   const enAlgorithm = EnAlgorithm['aes-256-ctr'];
   const iv = Buffer.alloc(16);
+  const enKeyLen = 32;
   const hashAlgorithm = HashAlgorithm['sha512'];
   const hash = '123123123';
+  const hashKeyLen = 32;
   const ext = '.zip';
   test('create metadata', () => {
     const metadata = createMetadata(
@@ -112,11 +114,13 @@ describe('test create metadata', () => {
       kdfSalt,
       enAlgorithm,
       iv,
+      enKeyLen,
       hashAlgorithm,
       hash,
+      hashKeyLen,
       ext,
     );
-    expect(metadata.length).toBe(291);
+    expect(metadata.length).toBe(309);
   });
 });
 
