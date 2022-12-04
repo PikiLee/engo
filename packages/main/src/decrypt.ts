@@ -4,6 +4,7 @@ import {statSync, createReadStream, createWriteStream} from 'node:fs';
 import {dirname, basename, extname, join} from 'node:path';
 import {createDecipheriv} from 'node:crypto';
 const pump = require('pump');
+const decompress = require('decompress');
 /**
  * retrieve string from the end of encrypted file.
  */
@@ -130,7 +131,7 @@ export const decrypt = (
   const inputDir = dirname(inputPath);
   const enExt = extname(inputPath);
   const inputFilename = basename(inputPath, enExt);
-  const {algorithm,  outputDir, outputFilename, outputExt, start, end} = Object.assign(
+  const {algorithm, outputDir, outputFilename, outputExt, start, end} = Object.assign(
     {
       algorithm: EnAlgorithm['aes-256-ctr'],
       outputDir: inputDir,
@@ -157,4 +158,27 @@ export const decrypt = (
       resolve(outputPath);
     });
   });
+};
+
+export const uncompress = async (
+  inputPath: string,
+  options?: {
+    outputDir?: string;
+    outputFilename?: string;
+  },
+) => {
+  const filename = basename(inputPath, '.zip');
+  const inputDir = dirname(inputPath);
+  const opts = Object.assign(
+    {
+      outputDir: inputDir,
+      outputFilename: filename,
+    },
+    options,
+  );
+  const {outputDir, outputFilename} = opts;
+
+  const outputPath = join(outputDir, outputFilename);
+  await decompress(inputPath, outputPath);
+  return outputPath;
 };

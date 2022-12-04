@@ -1,9 +1,10 @@
-import {unlinkSync, statSync} from 'node:fs';
+import {unlinkSync, statSync, accessSync} from 'node:fs';
 import {startEncrypt, generateKey, splitKey} from './../src/encrypt';
-import {retrieveMetaData, authVerify, decrypt} from './../src/decrypt';
+import {retrieveMetaData, authVerify, decrypt, uncompress} from './../src/decrypt';
 import {describe, test, expect} from 'vitest';
 const password = 'goodjobpeople';
 const inputPath = 'C:\\Users\\root\\Desktop\\test\\engo-test\\toBeEnctypted.txt';
+const zipFile = 'C:\\Users\\root\\Desktop\\test\\engo-test\\dir-test.zip';
 
 describe('test retrieve metadata', () => {
   test('test retrieve metadata', async () => {
@@ -18,9 +19,16 @@ describe('test retrieve metadata', () => {
 
 describe('test verify hash funtion', () => {
   test('test verify hash function', async () => {
-    const outputPath = await startEncrypt(password, inputPath, message => {
-      console.log(message);
-    });
+    const outputPath = await startEncrypt(
+      password,
+      inputPath,
+      message => {
+        console.log(message);
+      },
+      {
+        outputFilename: 'test-hash-1',
+      },
+    );
 
     const {hash, kdfSalt, kdfIteration, metadataLen} = await retrieveMetaData(outputPath);
 
@@ -68,5 +76,13 @@ describe('test decrypt function', () => {
     });
     unlinkSync(outputPath);
     unlinkSync(decryptedPath);
+  });
+});
+
+describe('test uncompress function', () => {
+  test('test uncompress', async () => {
+    const unzipped = await uncompress(zipFile);
+    expect(accessSync(unzipped)).toBe(undefined);
+    unlinkSync(unzipped);
   });
 });
