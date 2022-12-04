@@ -1,6 +1,9 @@
 import {HMAC} from './encrypt';
-import {HashAlgorithm} from './algorithms';
-import {statSync, createReadStream} from 'node:fs';
+import {HashAlgorithm, EnAlgorithm} from './algorithms';
+import {statSync, createReadStream, createWriteStream} from 'node:fs';
+import {dirname, basename, extname, join} from 'node:path';
+import {createDecipheriv} from 'node:crypto';
+const pump = require('pump');
 /**
  * retrieve string from the end of encrypted file.
  */
@@ -48,8 +51,19 @@ export const retrieveMetaData = async (filePath: string) => {
   const metadataStr = await readFileFromBack(filePath, {
     len: length,
   });
-  const [kdfAlgorithm, kdfIteration, kdfSalt, enAlgorithm, iv, enKeyLen, hashAlgorithm, hash, hashKeyLen, ext, _] =
-    metadataStr.split('$');
+  const [
+    kdfAlgorithm,
+    kdfIteration,
+    kdfSalt,
+    enAlgorithm,
+    iv,
+    enKeyLen,
+    hashAlgorithm,
+    hash,
+    hashKeyLen,
+    ext,
+    _,
+  ] = metadataStr.split('$');
   return {
     kdfAlgorithm,
     kdfIteration: Number(kdfIteration),
@@ -98,4 +112,49 @@ export const authVerify = async (
   } else {
     return false;
   }
+};
+
+export const decrypt = (
+  inputPath: string,
+  enKey: Buffer,
+  iv: Buffer,
+  options?: {
+    algorithm?: EnAlgorithm;
+    outputDir?: string;
+    outputFilename?: string;
+    outputExt?: string;
+    start?: number;
+    end?: number;
+  },
+) => {
+  const inputDir = dirname(inputPath);
+  const enExt = extname(inputPath);
+  const inputFilename = basename(inputPath, enExt);
+  const {algorithm,  outputDir, outputFilename, outputExt, start, end} = Object.assign(
+    {
+      algorithm: EnAlgorithm['aes-256-ctr'],
+      outputDir: inputDir,
+      outputFilename: inputFilename,
+      start: 0,
+      end: Infinity,
+    },
+    options,
+  );
+
+  const decipher = createDecipheriv(EnAlgorithm[algorithm], enKey, iv);
+
+  const readable = createReadStream(inputPath, {
+    start,
+    end,
+  });
+
+  const outputPath = join(outputDir, `${outputFilename}${outputExt ?? ''}`);
+  const writable = createWriteStream(outputPath);
+
+  return new Promise<string>((resolve, reject) => {
+    pump(readable, decipher, writable, (err: string) => {
+      if (err) reject(err);
+      resolve(outputPath);
+    });
+  });
 };

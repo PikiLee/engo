@@ -1,10 +1,9 @@
 import {unlinkSync, statSync} from 'node:fs';
 import {startEncrypt, generateKey, splitKey} from './../src/encrypt';
-import {retrieveMetaData, authVerify} from './../src/decrypt';
+import {retrieveMetaData, authVerify, decrypt} from './../src/decrypt';
 import {describe, test, expect} from 'vitest';
 const password = 'goodjobpeople';
 const inputPath = 'C:\\Users\\root\\Desktop\\test\\engo-test\\toBeEnctypted.txt';
-// const outputDir = 'C:\\Users\\root\\Desktop\\test\\engo-test';
 
 describe('test retrieve metadata', () => {
   test('test retrieve metadata', async () => {
@@ -37,5 +36,37 @@ describe('test verify hash funtion', () => {
       }),
     ).toBe(true);
     unlinkSync(outputPath);
+  });
+});
+
+describe('test decrypt function', () => {
+  test('test decrypt', async () => {
+    const outputPath = await startEncrypt(
+      password,
+      inputPath,
+      message => {
+        console.log(message);
+      },
+      {
+        outputFilename: 'test-decrypt-1',
+      },
+    );
+
+    const {kdfSalt, kdfIteration, enAlgorithm, iv, enKeyLen, ext, metadataLen} =
+      await retrieveMetaData(outputPath);
+
+    const {kdfKey} = generateKey(password, {
+      salt: kdfSalt,
+      iteration: kdfIteration,
+    });
+    const [{key: enKey}] = splitKey(kdfKey, [enKeyLen]);
+    const {size} = statSync(outputPath);
+    const decryptedPath = await decrypt(outputPath, enKey, iv, {
+      algorithm: enAlgorithm,
+      outputExt: ext,
+      end: size - metadataLen - 1,
+    });
+    unlinkSync(outputPath);
+    unlinkSync(decryptedPath);
   });
 });
