@@ -1,3 +1,5 @@
+import {HMAC} from './encrypt';
+import {HashAlgorithm} from './algorithms';
 import {statSync, createReadStream} from 'node:fs';
 // import {typeBufferEncoding}
 /**
@@ -43,47 +45,55 @@ export const readFileFromBack = (
  * Retrieve metadata from file.
  */
 export const retrieveMetaData = async (filePath: string) => {
-  const length = Number(removeChar(await readFileFromBack(filePath)));
+  const length = Number(Number(await readFileFromBack(filePath)));
   const metadataStr = await readFileFromBack(filePath, {
     len: length,
   });
-  const [
-    kdfAlgorithm,
-    kdfIteration,
-    kdfSalt,
-    enAlgorithm,
-    iv,
-    hashAlgorithm,
-    hash,
-    ext,
-    _,
-  ] = metadataStr.split('$');
+  const [kdfAlgorithm, kdfIteration, kdfSalt, enAlgorithm, iv, enKeyLen, hashAlgorithm, hash, hashKeyLen, ext, _] =
+    metadataStr.split('$');
   return {
     kdfAlgorithm,
-    kdfIteration: removeChar(kdfIteration),
-    kdfSalt: Buffer.from(removeChar(kdfSalt), 'hex'),
-    enAlgorithm: enAlgorithm,
-    iv: Buffer.from(removeChar(iv), 'hex'),
-    hashAlgorithm: hashAlgorithm,
-    hash: removeChar(hash),
-    ext: removeChar(ext),
+    kdfIteration: Number(kdfIteration),
+    kdfSalt: Buffer.from(kdfSalt, 'hex'),
+    enAlgorithm: Number(enAlgorithm),
+    iv: Buffer.from(iv, 'hex'),
+    enKeyLen: Number(enKeyLen),
+    hashAlgorithm: Number(hashAlgorithm),
+    hash: hash,
+    hashKeyLen: Number(hashKeyLen),
+    ext: ext,
     metadataLen: length,
   };
 };
 
-export const removeChar = (
-  str: string,
+export const authVerify = async (
+  filePath: string,
+  hashKey: Buffer,
+  originalHash: string,
   options?: {
-    char?: string;
+    algorithm?: HashAlgorithm;
+    start?: number;
+    end?: number;
   },
 ) => {
-  const {char} = Object.assign(
+  const {start, end, algorithm} = Object.assign(
     {
-      char: '#',
+      algorithm: HashAlgorithm['sha512'],
+      start: 0,
+      end: Infinity,
     },
     options,
   );
-  return str.replaceAll(char, '');
-};
 
-// export const authVerify = (filePath: string) => {};
+  const {hash} = await HMAC(hashKey, filePath, {
+    algorithm,
+    start,
+    end,
+  });
+
+  if (hash === originalHash) {
+    return true;
+  } else {
+    return false;
+  }
+};
