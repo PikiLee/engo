@@ -119,8 +119,9 @@ export const compress = (
     {
       gzip: true,
       file: outputFile,
+      cwd: inputDir,
     },
-    [inputPath],
+    [filename],
   ).then(() => {
     return outputFile;
   });

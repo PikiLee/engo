@@ -1,10 +1,16 @@
+import {doesExist} from './utils';
 import {HMAC} from './encrypt';
 import {HashAlgorithm, EnAlgorithm} from './algorithms';
-import {statSync, createReadStream, createWriteStream} from 'node:fs';
+import {
+  statSync,
+  createReadStream,
+  createWriteStream,
+  mkdirSync,
+} from 'node:fs';
 import {dirname, basename, extname, join} from 'node:path';
 import {createDecipheriv} from 'node:crypto';
 const pump = require('pump');
-const decompress = require('decompress');
+const {x} = require('tar');
 /**
  * retrieve string from the end of encrypted file.
  */
@@ -167,7 +173,7 @@ export const uncompress = async (
     outputFilename?: string;
   },
 ) => {
-  const filename = basename(inputPath, '.zip');
+  const filename = basename(inputPath, '.tgz');
   const inputDir = dirname(inputPath);
   const opts = Object.assign(
     {
@@ -179,6 +185,13 @@ export const uncompress = async (
   const {outputDir, outputFilename} = opts;
 
   const outputPath = join(outputDir, outputFilename);
-  await decompress(inputPath, outputPath);
-  return outputPath;
+  if (!doesExist(outputPath)) mkdirSync(outputPath);
+  return x({
+    file: inputPath,
+    cwd: outputPath,
+  }).then(() => {
+    return outputPath;
+  });
+  // await decompress(inputPath, outputPath);
+  // return outputPath;
 };
