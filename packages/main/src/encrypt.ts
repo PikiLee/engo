@@ -317,18 +317,22 @@ export const startEncrypt = async (
   callback: (message: string) => void,
   options?: {
     outputDir?: string;
+    outputFilename?: string;
   },
 ) => {
   try {
     const isInputFile = isFile(inputPath);
     const inputDir = dirname(inputPath);
+    const inputExt = extname(inputPath);
+    const inputFilename = basename(inputPath, inputExt);
     const opts = Object.assign(
       {
         outputDir: inputDir,
+        outputFilename: inputFilename,
       },
       options,
     );
-    const {outputDir} = opts;
+    const {outputDir, outputFilename} = opts;
     if (!isDirectory(outputDir)) throw '输出路径必须为文件';
 
     if (!isInputFile) {
@@ -355,6 +359,7 @@ export const startEncrypt = async (
       ext,
     } = await encrypt(enKey, inputPath, {
       outputDir: outputDir,
+      outputFilename,
     });
     const {hash, algorithm: hashAlgorithm} = await HMAC(hashKey, outputPath);
     const metadata = createMetadata([
