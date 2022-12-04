@@ -3,7 +3,6 @@ const pump = require('pump');
 const dayjs = require('dayjs');
 import {randomBytes, pbkdf2Sync} from 'node:crypto';
 import type {Buffer} from 'node:buffer';
-const archiver = require('archiver');
 import {
   createWriteStream,
   createReadStream,
@@ -16,6 +15,7 @@ import {join, basename, dirname, extname} from 'path';
 import {createHmac} from 'node:crypto';
 import {tmpdir} from 'node:os';
 import {isFile, isDirectory, doesExist} from './utils';
+const {c} = require('tar');
 
 /**
  * Generate a key with pbkdf2
@@ -114,33 +114,16 @@ export const compress = (
 
   if (!doesExist(inputPath)) throw '输入文件不存在';
   if (!isDirectory(outputDir)) throw '必须是目录';
-  const outputFile = join(outputDir, outputFilename + '.zip');
-  const output = createWriteStream(outputFile);
-  const archive = archiver('zip', {
-    zlib: {
-      level: 9,
+  const outputFile = join(outputDir, outputFilename + '.tgz');
+  return c(
+    {
+      gzip: true,
+      file: outputFile,
     },
+    [inputPath],
+  ).then(() => {
+    return outputFile;
   });
-
-  const res = new Promise<string>((resolve, reject) => {
-    output.on('close', function () {
-      console.log(archive.pointer() + ' total bytes');
-      resolve(outputFile);
-    });
-    archive.on('error', function (err: string) {
-      reject(err);
-    });
-  });
-
-  archive.pipe(output);
-  if (isDirectory(inputPath)) {
-    archive.directory(inputPath, false);
-  } else {
-    archive.file(inputPath, {name: outputFilename});
-  }
-  archive.finalize();
-
-  return res;
 };
 
 /**

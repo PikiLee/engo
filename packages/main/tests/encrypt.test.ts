@@ -4,13 +4,14 @@ import {expect, test, describe} from 'vitest';
 import {compress} from '../src/encrypt';
 import {Buffer} from 'node:buffer';
 import {unlinkSync, accessSync} from 'node:fs';
-import {join} from 'node:path';
+import {join, basename} from 'node:path';
 import {encrypt} from '../src/encrypt';
 import {HMAC} from './../src/encrypt';
 
 const password = 'goodjobpeople';
-const inputPath = 'C:\\Users\\root\\Desktop\\test\\engo-test\\toBeEnctypted.txt';
-const outputDir = 'C:\\Users\\root\\Desktop\\test\\engo-test';
+const inputPath = 'C:\\Users\\root\\Desktop\\test\\engo-test\\encrypt\\toBeEnctypted.txt';
+const inputDir = 'C:\\Users\\root\\Desktop\\test\\engo-test\\encrypt\\dir-test-1';
+const outputDir = 'C:\\Users\\root\\Desktop\\test\\engo-test\\encrypt';
 describe('test generate key', () => {
   test('generate key', () => {
     const {kdfSalt, kdfKey} = generateKey(password);
@@ -44,21 +45,16 @@ describe('test split key', () => {
 
 describe('test compress function', () => {
   test('compress file', async () => {
-    const inputPath = 'C:\\Users\\root\\Desktop\\test\\engo-test\\toBeEnctypted.txt';
-    const outputPath = 'C:\\Users\\root\\Desktop\\test\\engo-test';
+    const expectedOutput = join(outputDir, 'toBeEnctypted.txt.tgz');
 
-    const expectedOutput = join(outputPath, 'toBeEnctypted.txt.zip');
-    expect(await compress(inputPath, {outputDir: outputPath})).toBe(expectedOutput);
+    expect(await compress(inputPath, {outputDir: outputDir})).toBe(expectedOutput);
     accessSync(expectedOutput);
     unlinkSync(expectedOutput);
   });
 
   test('compress directory', async () => {
-    const inputPath = 'C:\\Users\\root\\Desktop\\test\\engo-test\\dir';
-    const outputPath = 'C:\\Users\\root\\Desktop\\test\\engo-test';
-
-    const expectedOutput = join(outputPath, 'dir.zip');
-    expect(await compress(inputPath, {outputDir: outputPath})).toBe(expectedOutput);
+    const expectedOutput = join(outputDir, basename(inputDir) + '.tgz');
+    expect(await compress(inputDir, {outputDir})).toBe(expectedOutput);
     accessSync(expectedOutput);
     unlinkSync(expectedOutput);
   });
