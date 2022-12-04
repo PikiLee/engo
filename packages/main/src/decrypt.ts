@@ -1,7 +1,6 @@
 import {HMAC} from './encrypt';
 import {HashAlgorithm} from './algorithms';
 import {statSync, createReadStream} from 'node:fs';
-// import {typeBufferEncoding}
 /**
  * retrieve string from the end of encrypted file.
  */
@@ -66,6 +65,9 @@ export const retrieveMetaData = async (filePath: string) => {
   };
 };
 
+/**
+ * Authenticate the data.
+ */
 export const authVerify = async (
   filePath: string,
   hashKey: Buffer,
