@@ -1,7 +1,7 @@
-import {doesExist} from './utils';
-import {HMAC} from './encrypt';
+import {doesExist, isDirectory} from './utils';
+import {HMAC, generateKey, splitKey} from './encrypt';
 import {HashAlgorithm, EnAlgorithm} from './algorithms';
-import {statSync, createReadStream, createWriteStream, mkdirSync} from 'node:fs';
+import {statSync, createReadStream, createWriteStream, mkdirSync, unlinkSync} from 'node:fs';
 import {dirname, basename, extname, join} from 'node:path';
 import {createDecipheriv} from 'node:crypto';
 const pump = require('pump');
@@ -124,26 +124,28 @@ export const decrypt = (
   iv: Buffer,
   options?: {
     algorithm?: EnAlgorithm;
-    outputDir?: string;
-    outputFilename?: string;
-    outputExt?: string;
     start?: number;
     end?: number;
+    outputPath?: string;
   },
 ) => {
   const inputDir = dirname(inputPath);
   const enExt = extname(inputPath);
   const inputFilename = basename(inputPath, enExt);
-  const {algorithm, outputDir, outputFilename, outputExt, start, end} = Object.assign(
+  const opts = Object.assign(
     {
       algorithm: EnAlgorithm['aes-256-ctr'],
-      outputDir: inputDir,
-      outputFilename: inputFilename,
       start: 0,
       end: Infinity,
+      outputPath: join(inputDir, inputFilename),
     },
     options,
   );
+  const {algorithm, start, end} = opts;
+  let {outputPath} = opts;
+  if (doesExist(outputPath) && isDirectory(outputPath)) {
+    outputPath = join(outputPath, inputFilename);
+  }
 
   const decipher = createDecipheriv(EnAlgorithm[algorithm], enKey, iv);
 
@@ -152,7 +154,6 @@ export const decrypt = (
     end,
   });
 
-  const outputPath = join(outputDir, `${outputFilename}${outputExt ?? ''}`);
   const writable = createWriteStream(outputPath);
 
   return new Promise<string>((resolve, reject) => {
@@ -192,4 +193,82 @@ export const uncompress = async (
   }).then(() => {
     return outputPath;
   });
+};
+
+/**
+ * Start decrypt a file.
+ */
+export const startDecrypt = async (
+  password: string,
+  inputPath: string,
+  options?: {
+    outputPath: string;
+  },
+) => {
+  const {
+    kdfIteration,
+    kdfBlockSize,
+    kdfParallelism,
+    kdfSalt,
+    enAlgorithm,
+    iv,
+    enKeyLen,
+    hashAlgorithm,
+    hash,
+    hashKeyLen,
+    ext,
+    metadataLen,
+  } = await retrieveMetaData(inputPath);
+
+  const inputDir = dirname(inputPath);
+  const inputFilename = basename(inputPath, '.nmsl');
+  let {outputPath} = Object.assign(
+    {
+      outputPath: join(inputDir, inputFilename + ext),
+    },
+    options,
+  );
+  if (doesExist(outputPath) && isDirectory(outputPath)) {
+    outputPath = join(outputPath, inputFilename + ext);
+  }
+
+  // generate key from password
+  const {kdfKey} = generateKey(password, {
+    salt: kdfSalt,
+    iteration: kdfIteration,
+    blockSize: kdfBlockSize,
+    parallelism: kdfParallelism,
+    keyLen: enKeyLen + hashKeyLen,
+  });
+  const [{key: enKey}, {key: hashKey}] = splitKey(kdfKey, [enKeyLen, hashKeyLen]);
+
+  // verify mac code
+  const inputSize = statSync(inputPath).size;
+  const end = inputSize - metadataLen - 1;
+  if (
+    !(await authVerify(inputPath, hashKey, hash, {
+      algorithm: hashAlgorithm,
+      end,
+    }))
+  ) {
+    throw '文件完整性验证未通过';
+  }
+
+  // decrypt
+  console.log(
+    await decrypt(inputPath, enKey, iv, {
+      algorithm: enAlgorithm,
+      end,
+      outputPath,
+    }),
+  );
+
+  // uncompress
+  const finalPath = ext === '.tgz' ? await uncompress(outputPath) : outputPath;
+
+  if (ext === '.tgz') {
+    unlinkSync(outputPath);
+  }
+
+  return finalPath;
 };

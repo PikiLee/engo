@@ -1,6 +1,7 @@
+import {basename, join, dirname} from 'path';
 import {unlinkSync, statSync, accessSync, rmSync} from 'node:fs';
 import {startEncrypt, generateKey, splitKey, compress} from './../src/encrypt';
-import {retrieveMetaData, authVerify, decrypt, uncompress} from './../src/decrypt';
+import {retrieveMetaData, authVerify, decrypt, uncompress, startDecrypt} from './../src/decrypt';
 import {describe, test, expect} from 'vitest';
 const password = 'goodjobpeople';
 const inputPath = 'C:\\Users\\root\\Desktop\\test\\engo-test\\decrypt\\toBeEnctypted.txt';
@@ -70,10 +71,12 @@ describe('test decrypt function', () => {
     });
     const [{key: enKey}] = splitKey(kdfKey, [enKeyLen]);
     const {size} = statSync(outputPath);
-    const decryptedPath = await decrypt(outputPath, enKey, iv, {
+    const decryptedPath = join(dirname(outputPath), basename(outputPath, '.nmsl') + ext);
+
+    await decrypt(outputPath, enKey, iv, {
       algorithm: enAlgorithm,
-      outputExt: ext,
       end: size - metadataLen - 1,
+      outputPath: decryptedPath,
     });
     unlinkSync(outputPath);
     unlinkSync(decryptedPath);
@@ -92,4 +95,33 @@ describe('test uncompress function', () => {
     });
     unlinkSync(compressed);
   });
+});
+
+describe('test startDecrypt function', () => {
+  test('test startDecrypt an encrypted directory.', async () => {
+    const inputPath = await startEncrypt(password, inputDir, (message: string) => {
+      console.log(message);
+    });
+
+    const outputPath = await startDecrypt(password, inputPath);
+    expect(typeof outputPath).toBe('string');
+    unlinkSync(inputPath);
+    rmSync(outputPath, {
+      recursive: true,
+    });
+  }, 10000);
+
+  test.only('test startDecrypt a encrypted file.', async () => {
+    const input = await startEncrypt(password, inputPath, (message: string) => {
+      console.log(message);
+    });
+
+    const outputPath = await startDecrypt(password, input, {
+      outputPath: join(dirname(input), 'abc.txt'),
+    });
+    expect(statSync(inputPath).size === statSync(outputPath).size).toBe(true);
+
+    expect(typeof outputPath).toBe('string');
+    unlinkSync(input);
+  }, 10000);
 });
