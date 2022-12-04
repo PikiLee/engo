@@ -1,7 +1,7 @@
 import {HashAlgorithm, EnAlgorithm} from './algorithms';
 const pump = require('pump');
 const dayjs = require('dayjs');
-import {randomBytes, pbkdf2Sync} from 'node:crypto';
+import {randomBytes, scryptSync} from 'node:crypto';
 import type {Buffer} from 'node:buffer';
 import {
   createWriteStream,
@@ -38,27 +38,35 @@ export const generateKey = (
     saltLen?: number;
     iteration?: number;
     keyLen?: number;
-    algorithm?: HashAlgorithm;
+    blockSize?: number;
+    parallelism?: number;
   },
 ) => {
   const opts = Object.assign(
     {
       saltLen: 16,
-      iteration: 100000,
+      iteration: 1048576,
       keyLen: 64,
-      algorithm: HashAlgorithm['sha512'],
+      blockSize: 8,
+      parallelism: 1,
     },
     options,
   );
-  const {salt: passInSalt, saltLen, iteration, keyLen, algorithm} = opts;
+  const {salt: passInSalt, saltLen, iteration, keyLen, blockSize, parallelism} = opts;
 
   const salt = passInSalt ?? randomBytes(saltLen);
-  const key = pbkdf2Sync(password, salt, iteration, keyLen, HashAlgorithm[algorithm]);
+  const key = scryptSync(password.normalize(), salt, keyLen, {
+    cost: iteration,
+    blockSize,
+    parallelization: parallelism,
+    maxmem: 2 * 1024 * 1024 * 1024,
+  });
   return {
     kdfSalt: salt,
     kdfKey: key,
     kdfIteration: iteration,
-    kdfAlgorithm: algorithm,
+    kdfBlockSize: blockSize,
+    kdfParallelism: parallelism,
   };
 };
 
@@ -330,7 +338,7 @@ export const startEncrypt = async (
       });
     }
 
-    const {kdfSalt, kdfIteration, kdfKey, kdfAlgorithm} = generateKey(password);
+    const {kdfSalt, kdfIteration, kdfKey, kdfBlockSize, kdfParallelism} = generateKey(password);
     const [{key: enKey, len: enKeyLen}, {key: hashKey, len: hashKeyLen}] = splitKey(
       kdfKey,
       [32, 32],
@@ -347,8 +355,9 @@ export const startEncrypt = async (
     });
     const {hash, algorithm: hashAlgorithm} = await HMAC(hashKey, outputPath);
     const metadata = createMetadata([
-      kdfAlgorithm,
       kdfIteration,
+      kdfBlockSize,
+      kdfParallelism,
       kdfSalt,
       enAlgorithm,
       iv,

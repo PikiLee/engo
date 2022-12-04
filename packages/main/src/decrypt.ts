@@ -1,12 +1,7 @@
 import {doesExist} from './utils';
 import {HMAC} from './encrypt';
 import {HashAlgorithm, EnAlgorithm} from './algorithms';
-import {
-  statSync,
-  createReadStream,
-  createWriteStream,
-  mkdirSync,
-} from 'node:fs';
+import {statSync, createReadStream, createWriteStream, mkdirSync} from 'node:fs';
 import {dirname, basename, extname, join} from 'node:path';
 import {createDecipheriv} from 'node:crypto';
 const pump = require('pump');
@@ -59,8 +54,9 @@ export const retrieveMetaData = async (filePath: string) => {
     len: length,
   });
   const [
-    kdfAlgorithm,
     kdfIteration,
+    kdfBlockSize,
+    kdfParallelism,
     kdfSalt,
     enAlgorithm,
     iv,
@@ -72,8 +68,9 @@ export const retrieveMetaData = async (filePath: string) => {
     _,
   ] = metadataStr.split('$');
   return {
-    kdfAlgorithm,
     kdfIteration: Number(kdfIteration),
+    kdfBlockSize: Number(kdfBlockSize),
+    kdfParallelism: Number(kdfParallelism),
     kdfSalt: Buffer.from(kdfSalt, 'hex'),
     enAlgorithm: Number(enAlgorithm),
     iv: Buffer.from(iv, 'hex'),
@@ -166,6 +163,9 @@ export const decrypt = (
   });
 };
 
+/**
+ * Uncompress a file.
+ */
 export const uncompress = async (
   inputPath: string,
   options?: {
@@ -192,6 +192,4 @@ export const uncompress = async (
   }).then(() => {
     return outputPath;
   });
-  // await decompress(inputPath, outputPath);
-  // return outputPath;
 };
