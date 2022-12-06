@@ -42,6 +42,7 @@
       开始加密
     </a-button>
     <p>{{ versions }}</p>
+    <AppLoading></AppLoading>
   </div>
 </template>
 
@@ -49,6 +50,7 @@
 import {versions, selectFile, invokeEncrypt} from '#preload';
 import {ref} from 'vue';
 import type {Event} from 'electron';
+import AppLoading from './AppLoading.vue';
 
 const inputPath = ref('');
 const outputPath = ref('');

@@ -55,6 +55,7 @@
     "ant-design-vue": "^3.2.15",
     "dayjs": "^1.11.6",
     "electron-updater": "5.3.0",
+    "gsap": "^3.11.3",
     "pump": "^3.0.0",
     "tar": "^6.1.12",
     "vue": "3.2.45"
