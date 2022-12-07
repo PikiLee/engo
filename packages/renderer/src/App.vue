@@ -1,7 +1,7 @@
 <script lang="ts" setup>
 import {ref} from 'vue';
 import AppTabs from './components/AppTabs.vue';
-// import EncryptionHome from './components/EncryptionHome.vue';
+import EncryptionHome from './components/EncryptionHome.vue';
 import TabPane from './components/TabPane.vue';
 
 const activeKey = ref(1);
@@ -12,7 +12,9 @@ const activeKey = ref(1);
     <TabPane
       :key="1"
       tab="加密"
-    ></TabPane>
+    >
+      <EncryptionHome></EncryptionHome>
+    </TabPane>
     <TabPane
       :key="2"
       tab="解密"

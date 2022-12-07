@@ -87,7 +87,6 @@ onMounted(() => {
 
           const distanceX = activeElRect.x - containerRect.x + activeElRect.width * 0.5;
           const distanceY = activeElRect.y - containerRect.y + activeElRect.height * 1.2;
-          console.log(`x:${distanceX}, y:${distanceY}`);
 
           gsap.to(barEl.value, {
             left: distanceX,
