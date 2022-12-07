@@ -52,6 +52,7 @@
     "vue-tsc": "1.0.9"
   },
   "dependencies": {
+    "@ant-design/icons-vue": "^6.1.0",
     "@types/node": "^18.11.10",
     "ant-design-vue": "^3.2.15",
     "dayjs": "^1.11.6",

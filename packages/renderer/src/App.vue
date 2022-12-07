@@ -58,6 +58,7 @@ body {
 
   --green-light: #95DFA1;
   --green-main: #509638;
+  --green-dark: #509638;
   --warning: #A74E4E;
 
   background-color: var(--bg);

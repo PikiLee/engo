@@ -2,6 +2,13 @@
   <div class="container">
     <AppLoading :loading="loading">打 开</AppLoading>
     <AppInfo />
+    <div class="password">
+      <BaseInput
+        v-model="password"
+        type="password"
+        placeholder="输入密码"
+      ></BaseInput>
+    </div>
   </div>
 </template>
 
@@ -11,11 +18,13 @@ import {ref} from 'vue';
 import AppInfo from './AppInfo.vue';
 // import type {Event} from 'electron';
 import AppLoading from './AppLoading.vue';
+import BaseInput from './BaseInput.vue';
 
 // const inputPath = ref('');
 // const outputPath = ref('');
 // const msg = ref('');
 const loading = ref(false);
+const password = ref('');
 
 // const getInputFile = (type: 'file' | 'dir') => {
 //   selectFile(type, (event: Event, filePath: string) => {
@@ -44,8 +53,11 @@ const loading = ref(false);
 </script>
 
 <style lang="scss" scoped>
-
 .text-center {
   text-align: center;
+}
+
+.password {
+  margin-top: 1rem;
 }
 </style>
