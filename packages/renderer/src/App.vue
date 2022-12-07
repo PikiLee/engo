@@ -8,7 +8,7 @@ const activeKey = ref(1);
 </script>
 
 <template>
-  <AppTabs :active-key="activeKey">
+  <AppTabs v-model:active-key="activeKey">
     <TabPane
       :key="1"
       tab="加密"

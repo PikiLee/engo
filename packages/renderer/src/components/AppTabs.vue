@@ -1,16 +1,26 @@
 <template>
   <div>
     <header class="head">
-      <div class="tabs">
+      <div
+        ref="tabContainer"
+        class="tabs"
+      >
         <div
           v-for="tab in tabs"
+          ref="tabEls"
           :key="tab.key"
+          :data-key="tab.key"
           class="tab"
           :class="{active: activeKey === tab.key}"
+          @click="() => $emit('update:activeKey', tab.key)"
         >
           {{ tab.tab }}
-          <span class="bar"></span>
         </div>
+
+        <span
+          ref="barEl"
+          class="bar"
+        ></span>
       </div>
     </header>
     <div class="content"> <slot /> </div>
@@ -18,11 +28,14 @@
 </template>
 
 <script setup lang="ts">
-import {useSlots, ref, type VNode} from 'vue';
+import {useSlots, watch, ref, type VNode, onMounted} from 'vue';
+import {gsap} from 'gsap';
 
-defineProps<{
+const props = defineProps<{
   activeKey: string | number;
 }>();
+
+defineEmits(['update:activeKey']);
 
 const slots = useSlots();
 
@@ -53,6 +66,39 @@ if (slots.default) {
   const parsedTabs = parseTabList(slots.default());
   if (parsedTabs) tabs.value = parsedTabs as Tab[];
 }
+
+// animation
+const tabContainer = ref<HTMLElement | null>(null);
+const tabEls = ref<HTMLElement[] | null>(null);
+const barEl = ref<HTMLElement | null>(null);
+onMounted(() => {
+  watch(
+    () => props.activeKey,
+    newValue => {
+      if (tabEls.value && barEl.value && tabContainer.value) {
+        const activeEl = tabEls.value.find(tabEl => {
+          return tabEl.dataset.key === String(newValue);
+        });
+
+        if (activeEl) {
+          const activeElRect = activeEl.getBoundingClientRect();
+
+          const containerRect = tabContainer.value.getBoundingClientRect();
+
+          const distanceX = activeElRect.x - containerRect.x + activeElRect.width * 0.5;
+          const distanceY = activeElRect.y - containerRect.y + activeElRect.height * 1.2;
+          console.log(`x:${distanceX}, y:${distanceY}`);
+
+          gsap.to(barEl.value, {
+            left: distanceX,
+            top: distanceY,
+          });
+        }
+      }
+    },
+    {immediate: true},
+  );
+});
 </script>
 <style scoped lang="scss">
 .tabs {
@@ -64,21 +110,21 @@ if (slots.default) {
   font-weight: 800;
   color: var(--text-gray);
   cursor: pointer;
+  position: relative;
 
   .tab {
-    position: relative;
     &.active {
       color: var(--text-main);
-      .bar {
-        position: absolute;
-        bottom: -40%;
-        left: 50%;
-        transform: translateX(-50%);
-        width: 1rem;
-        height: 3px;
-        background: var(--green-light);
-      }
     }
+  }
+  .bar {
+    position: absolute;
+    left: 0;
+    top: 0;
+    transform: translateX(-50%);
+    width: 1rem;
+    height: 3px;
+    background: var(--green-light);
   }
 }
 </style>
