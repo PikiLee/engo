@@ -1,29 +1,23 @@
 <script lang="ts" setup>
 import {ref} from 'vue';
-import EncryptionHome from './components/EncryptionHome.vue';
+import AppTabs from './components/AppTabs.vue';
+// import EncryptionHome from './components/EncryptionHome.vue';
+import TabPane from './components/TabPane.vue';
 
-const activeKey = ref(0);
+const activeKey = ref(1);
 </script>
 
 <template>
-  <a-tabs
-    v-model:activeKey="activeKey"
-    centered
-  >
-    <a-tab-pane
-      key="0"
+  <AppTabs :active-key="activeKey">
+    <TabPane
+      :key="1"
       tab="加密"
-    >
-      <EncryptionHome></EncryptionHome>
-    </a-tab-pane>
-    <a-tab-pane
-      key="1"
+    ></TabPane>
+    <TabPane
+      :key="2"
       tab="解密"
-      force-render
-    >
-      Content of Tab Pane 2
-    </a-tab-pane>
-  </a-tabs>
+    ></TabPane>
+  </AppTabs>
 </template>
 
 <style>
@@ -44,5 +38,24 @@ fieldset {
 
 .test {
   color: red;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  --text-main: #EAEAEA;
+  --text-gray: #D1CCCC;
+  --text-dark: #696969;
+  --bg: #212022;
+
+  --green-light: #95DFA1;
+
+  background-color: var(--bg);
 }
 </style>
