@@ -1,12 +1,14 @@
 <template>
   <div class="container">
     <AppLoading :loading="loading">打 开</AppLoading>
+    <AppInfo />
   </div>
 </template>
 
 <script setup lang="ts">
 // import {versions, selectFile, invokeEncrypt} from '#preload';
 import {ref} from 'vue';
+import AppInfo from './AppInfo.vue';
 // import type {Event} from 'electron';
 import AppLoading from './AppLoading.vue';
 
