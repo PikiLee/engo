@@ -14,7 +14,7 @@
           :class="{active: activeKey === tab.key}"
           @click="() => $emit('update:activeKey', tab.key)"
         >
-          {{ tab.tab }}
+          {{ tab.tab.split("").reduce((p, c) => p + "&nbsp;&nbsp;&nbsp;" + c) }}
         </div>
 
         <span
@@ -108,7 +108,7 @@ onMounted(() => {
 
   font-size: 1rem;
   font-weight: 800;
-  color: var(--text-gray);
+  color: var(--text-dark);
   cursor: pointer;
   position: relative;
 
@@ -122,7 +122,7 @@ onMounted(() => {
     left: 0;
     top: 0;
     transform: translateX(-50%);
-    width: 1rem;
+    width: 1.6rem;
     height: 3px;
     background: var(--green-light);
   }
