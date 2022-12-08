@@ -34,6 +34,7 @@
         ref="mainEl"
         filter="url(#filter0_ddi_4_18)"
         class="mainEl"
+        @click="$emit('click:button')"
       >
         <circle
           cx="130.595"
@@ -189,6 +190,8 @@ const props = defineProps<{
   loading: boolean;
 }>();
 
+defineEmits(['click:button']);
+
 // const svgEl = ref(null);
 const mainEl = ref(null);
 const waveEl = ref(null);
@@ -314,14 +317,19 @@ onMounted(() => {
   padding-inline: 4rem;
   overflow: visible;
   position: relative;
-  cursor: pointer;
 
   &.load {
-    cursor: wait;
+    .mainEl {
+      cursor: wait;
+    }
   }
 
   .svgEl {
     overflow: visible;
+
+    .mainEl {
+      cursor: pointer;
+    }
   }
 
   .text {
@@ -329,6 +337,7 @@ onMounted(() => {
     left: 50%;
     top: 50%;
     transform: translate(-50%, -50%);
+    pointer-events: none;
 
     font-size: 1.3rem;
     font-weight: 700;

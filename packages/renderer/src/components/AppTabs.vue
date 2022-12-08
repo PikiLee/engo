@@ -14,7 +14,7 @@
           :class="{active: activeKey === tab.key}"
           @click="() => $emit('update:activeKey', tab.key)"
         >
-          {{ tab.tab.split("").reduce((p, c) => p + "&nbsp;&nbsp;&nbsp;" + c) }}
+          {{ tab.tab.split('').reduce((p, c) => p + '&nbsp;&nbsp;&nbsp;' + c) }}
         </div>
 
         <span
@@ -100,30 +100,32 @@ onMounted(() => {
 });
 </script>
 <style scoped lang="scss">
-.tabs {
-  display: flex;
-  align-items: center;
-  justify-content: space-around;
+.head {
+  padding-block: 2rem;
+  .tabs {
+    display: flex;
+    align-items: center;
+    justify-content: space-around;
 
-  font-size: 1rem;
-  font-weight: 800;
-  color: var(--text-dark);
-  cursor: pointer;
-  position: relative;
-
-  .tab {
-    &.active {
-      color: var(--text-main);
+    font-size: 1rem;
+    font-weight: 800;
+    color: var(--text-dark);
+    cursor: pointer;
+    position: relative;
+    .tab {
+      &.active {
+        color: var(--text-main);
+      }
     }
-  }
-  .bar {
-    position: absolute;
-    left: 0;
-    top: 0;
-    transform: translateX(-50%);
-    width: 1.6rem;
-    height: 3px;
-    background: var(--green-light);
+    .bar {
+      position: absolute;
+      left: 0;
+      top: 0;
+      transform: translateX(-50%);
+      width: 1.6rem;
+      height: 3px;
+      background: var(--green-light);
+    }
   }
 }
 </style>

@@ -8,7 +8,9 @@ const activeKey = ref(1);
 </script>
 
 <template>
-  <AppTabs v-model:active-key="activeKey">
+  <AppTabs
+    v-model:active-key="activeKey"
+  >
     <TabPane
       :key="1"
       tab="加密"
@@ -29,8 +31,9 @@ const activeKey = ref(1);
   -moz-osx-font-smoothing: grayscale;
   text-align: center;
   color: #2c3e50;
-  margin: 60px auto;
-  max-width: 700px;
+  height: 100vh;
+  max-width: 600px;
+  margin: auto;
 }
 
 fieldset {

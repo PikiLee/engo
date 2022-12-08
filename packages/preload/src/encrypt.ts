@@ -4,7 +4,10 @@ import type {IpcRendererEvent} from 'electron';
 
 export const selectFile = (
   type: ('file' | 'dir')[],
-  callback: (event: Event, type: string) => void,
+  callback: (event: Event, path: {
+    path: string,
+    basename: string
+  }) => void,
 ) => {
   ipcRenderer.invoke('selectFile', type);
   ipcRenderer.once('filePath', callback);

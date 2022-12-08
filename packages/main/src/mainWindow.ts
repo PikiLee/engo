@@ -1,6 +1,6 @@
 // import {startEncrypt} from './encrypt';
 import {app, BrowserWindow, ipcMain, shell, type OpenDialogOptions} from 'electron';
-import {join} from 'path';
+import {basename, join} from 'path';
 import {URL} from 'url';
 import {startEncrypt} from './encrypt';
 const {dialog} = require('electron');
@@ -8,6 +8,10 @@ import {curry} from 'lodash';
 
 async function createWindow() {
   const browserWindow = new BrowserWindow({
+    width: 400,
+    height: 640,
+    minWidth: 400,
+    minHeight: 640,
     show: false, // Use the 'ready-to-show' event to show the instantiated BrowserWindow.
     webPreferences: {
       nodeIntegration: false,
@@ -39,7 +43,8 @@ async function createWindow() {
       }
     }
     const res = await dialog.showOpenDialog({properties});
-    browserWindow.webContents.send('filePath', res.filePaths[0] ?? '');
+    const filePath = res.filePaths[0] ?? '';
+    browserWindow.webContents.send('filePath', {path: filePath, basename: basename(filePath)});
   });
   ipcMain.handle(
     'startEncrypt',

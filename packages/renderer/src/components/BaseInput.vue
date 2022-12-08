@@ -32,7 +32,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref, watch} from 'vue';
+import {computed, onMounted, ref, watch} from 'vue';
 import {EyeOutlined, EyeInvisibleOutlined} from '@ant-design/icons-vue';
 import {selectFile} from '#preload';
 
@@ -79,7 +79,6 @@ function resizeInput() {
   inputWidth.value = `${width}ch`;
 }
 
-
 const inputEl = ref<HTMLElement | null>(null);
 onMounted(() => {
   watch(
@@ -103,9 +102,18 @@ onMounted(() => {
 
 // type: dir
 const getOutputPath = () => {
-  selectFile(['dir'], (event: Event, filePath: string) => {
-    value.value = filePath;
-  });
+  selectFile(
+    ['dir'],
+    (
+      event: Event,
+      path: {
+        path: string;
+        basename: string;
+      },
+    ) => {
+      value.value = path.path;
+    },
+  );
 };
 </script>
 
