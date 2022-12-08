@@ -262,6 +262,7 @@ onMounted(() => {
   padding-inline: 4rem;
   overflow: visible;
   position: relative;
+  cursor: pointer;
 
   .svgEl {
     overflow: visible;
