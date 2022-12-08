@@ -9,6 +9,13 @@
         placeholder="输入密码"
       ></BaseInput>
     </div>
+    <div class="password">
+      <BaseInput
+        v-model="file"
+        type="dir"
+        placeholder="选择输出目录"
+      ></BaseInput>
+    </div>
   </div>
 </template>
 
@@ -25,6 +32,7 @@ import BaseInput from './BaseInput.vue';
 // const msg = ref('');
 const loading = ref(false);
 const password = ref('');
+const file = ref('');
 
 // const getInputFile = (type: 'file' | 'dir') => {
 //   selectFile(type, (event: Event, filePath: string) => {
