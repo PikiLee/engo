@@ -66,6 +66,7 @@ const info = ref('');
 
 // input file
 const getInputFile = () => {
+  if (loading.value) return;
   finalFilePath.value = '';
   if (formState.inputPath) {
     en();

@@ -1,5 +1,8 @@
 <template>
-  <div class="container">
+  <div
+    class="container"
+    :class="{load: loading}"
+  >
     <svg
       ref="svgEl"
       class="svgEl"
@@ -38,38 +41,40 @@
           r="53.3079"
           fill="#509638"
         />
-        <g v-if="loading">
-          <rect
-            ref="rect1El"
-            class="rect1El"
-            x="143"
-            y="144"
-            width="13"
-            height="4"
-            rx="2"
-            fill="#EAEAEA"
-          />
-          <rect
-            ref="rect2El"
-            class="rect2El"
-            x="124"
-            y="144"
-            width="13"
-            height="4"
-            rx="2"
-            fill="#EAEAEA"
-          />
-          <rect
-            ref="rect3El"
-            class="rect3El"
-            x="105"
-            y="144"
-            width="13"
-            height="4"
-            rx="2"
-            fill="#EAEAEA"
-          />
-        </g>
+        <Transition :on-enter="doRectAnimation">
+          <g v-if="loading">
+            <rect
+              ref="rect1El"
+              class="rect1El"
+              x="143"
+              y="144"
+              width="13"
+              height="4"
+              rx="2"
+              fill="#EAEAEA"
+            />
+            <rect
+              ref="rect2El"
+              class="rect2El"
+              x="124"
+              y="144"
+              width="13"
+              height="4"
+              rx="2"
+              fill="#EAEAEA"
+            />
+            <rect
+              ref="rect3El"
+              class="rect3El"
+              x="105"
+              y="144"
+              width="13"
+              height="4"
+              rx="2"
+              fill="#EAEAEA"
+            />
+          </g>
+        </Transition>
       </g>
       <path
         ref="waveEl"
@@ -169,17 +174,18 @@
       ref="textEl"
       class="text"
     >
-      <slot />
+      <template v-if="!loading">
+        <slot />
+      </template>
     </p>
   </div>
 </template>
 
 <script setup lang="ts">
-import {onMounted, ref} from 'vue';
-// import anime from 'animejs/lib/anime.es.js';
+import {onMounted, ref, watch} from 'vue';
 import {gsap} from 'gsap';
 
-defineProps<{
+const props = defineProps<{
   loading: boolean;
 }>();
 
@@ -191,7 +197,10 @@ const rect1El = ref(null);
 const rect2El = ref(null);
 const rect3El = ref(null);
 const textEl = ref(null);
-onMounted(() => {
+
+const doAnimation = () => {
+  const animations: gsap.core.Tween[] = [];
+
   gsap.registerEffect({
     name: 'scale',
     defaults: {duration: 1, scale: 1.2},
@@ -203,56 +212,99 @@ onMounted(() => {
         yoyo: true,
         ease: 'power1.inOut',
         transformOrigin: 'center center',
+        paused: true,
+        onRepeat: function (this: gsap.core.Tween) {
+          if (!props.loading) this.pause();
+        },
       });
     },
   });
 
-  gsap.effects.scale(mainEl.value);
-  gsap.effects.scale(textEl.value);
-  gsap.effects.scale(outCircleEl.value, {
-    scale: 1.6,
-  });
-  gsap.effects.scale(waveEl.value, {
-    scale: 1.8,
-  });
+  animations.push(gsap.effects.scale(mainEl.value));
+  animations.push(gsap.effects.scale(textEl.value));
+  animations.push(
+    gsap.effects.scale(outCircleEl.value, {
+      scale: 1.6,
+    }),
+  );
+  animations.push(
+    gsap.effects.scale(waveEl.value, {
+      scale: 1.8,
+    }),
+  );
 
-  gsap.to(outCircleEl.value, {
-    rotate: 360,
-    duration: 1,
-    repeat: -1,
-    ease: 'power4.inOut',
-    transformOrigin: 'center center',
-  });
+  animations.push(
+    gsap.to(outCircleEl.value, {
+      rotate: 360,
+      duration: 1,
+      repeat: -1,
+      ease: 'power4.inOut',
+      transformOrigin: 'center center',
+      paused: true,
+      onRepeat: function (this: gsap.core.Tween) {
+        if (!props.loading) this.pause();
+      },
+    }),
+  );
 
-  gsap.registerEffect({
-    name: 'grow',
-    defaults: {duration: 0.5, scaleY: 5, delay: 0},
-    effect: (targets: gsap.TweenTarget, config: gsap.TweenVars) => {
-      return gsap.to(targets, {
-        duration: config.duration,
-        scaleY: config.scaleY,
-        repeat: -1,
-        yoyo: true,
-        ease: 'power4.inOut',
-        delay: config.delay,
-        transformOrigin: 'center bottom',
-      });
-    },
-  });
+  const pause = () => {
+    animations.forEach(a => a.pause());
+  };
 
+  const start = () => {
+    animations.forEach(a => a.restart());
+  };
+
+  return {start, pause};
+};
+
+gsap.registerEffect({
+  name: 'grow',
+  defaults: {duration: 0.5, scaleY: 5, delay: 0},
+  effect: (targets: gsap.TweenTarget, config: gsap.TweenVars) => {
+    return gsap.to(targets, {
+      duration: config.duration,
+      scaleY: config.scaleY,
+      repeat: -1,
+      yoyo: true,
+      ease: 'power4.inOut',
+      delay: config.delay,
+      transformOrigin: 'center bottom',
+      onRepeat: function (this: gsap.core.Tween) {
+        if (!props.loading) this.pause();
+      },
+    });
+  },
+});
+
+const doRectAnimation = (_: HTMLElement, done: () => void) => {
   gsap.effects.grow(rect1El.value, {
     scaleY: 8,
     delay: 0.2,
     duration: 0.6,
-  });
+  }),
+    gsap.effects.grow(rect2El.value, {
+      scaleY: 10,
+      duration: 0.7,
+    }),
+    gsap.effects.grow(rect3El.value, {
+      delay: 0.3,
+    }),
+    done();
+};
 
-  gsap.effects.grow(rect2El.value, {
-    scaleY: 10,
-    duration: 0.7,
-  });
-  gsap.effects.grow(rect3El.value, {
-    delay: 0.3,
-  });
+let start: () => void;
+onMounted(() => {
+  const controls = doAnimation();
+  start = controls.start;
+
+  watch(
+    () => props.loading,
+    newValue => {
+      if (newValue) start();
+    },
+    {immediate: true},
+  );
 });
 </script>
 
@@ -264,6 +316,10 @@ onMounted(() => {
   position: relative;
   cursor: pointer;
 
+  &.load {
+    cursor: wait;
+  }
+
   .svgEl {
     overflow: visible;
   }
@@ -273,7 +329,7 @@ onMounted(() => {
     left: 50%;
     top: 50%;
     transform: translate(-50%, -50%);
-    
+
     font-size: 1.3rem;
     font-weight: 700;
     color: var(--text-main);
