@@ -1,8 +1,10 @@
 // import {startEncrypt} from './encrypt';
-import {app, BrowserWindow, ipcMain} from 'electron';
+import {app, BrowserWindow, ipcMain, shell} from 'electron';
 import {join} from 'path';
 import {URL} from 'url';
+import {startEncrypt} from './encrypt';
 const {dialog} = require('electron');
+import {curry} from 'lodash';
 
 async function createWindow() {
   const browserWindow = new BrowserWindow({
@@ -16,16 +18,44 @@ async function createWindow() {
     },
   });
 
+  const sendMessage = (channel: string, message: unknown) => {
+    browserWindow.webContents.send(channel, message);
+  };
+  const curriedSendMessage = curry(sendMessage);
+  const sendEncryptMessage = curriedSendMessage('encryptMsg');
+  const sendEncryptEndMessage = curriedSendMessage('encryptEnd');
+
   ipcMain.handle('selectFile', async (_, type: 'file' | 'dir') => {
     const openType = type === 'file' ? 'openFile' : 'openDirectory';
     const res = await dialog.showOpenDialog({properties: [openType]});
     browserWindow.webContents.send('filePath', res.filePaths[0] ?? '');
   });
-  // ipcMain.handle('startEncrypt', async (_, args: {inputPath: string; outputDir: string}) => {
-  //   await startEncrypt(args.inputPath, args.outputDir, (message: string) => {
-  //     browserWindow.webContents.send('encryptMsg', message);
-  //   });
-  // });
+  ipcMain.handle(
+    'startEncrypt',
+    async (
+      _,
+      args: {
+        password: string;
+        inputPath: string;
+        options?: {
+          outputDir?: string;
+        };
+      },
+    ) => {
+      await startEncrypt(
+        args.password,
+        args.inputPath,
+        sendEncryptMessage,
+        sendEncryptEndMessage,
+        args.options,
+      );
+      browserWindow.webContents.send('encryptEnd', -1);
+    },
+  );
+
+  ipcMain.handle('showFile', (event, path: string) => {
+    shell.showItemInFolder(path);
+  });
 
   /**
    * If the 'show' property of the BrowserWindow's constructor is omitted from the initialization options,

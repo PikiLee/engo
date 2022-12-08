@@ -298,7 +298,7 @@ export const createMetadata = (data: (number | string | Buffer)[], version = 0) 
  * Start Encrypt File or Directory
  * @param {string} password
  * @param {string} inputPath
- * @param {Function} callback - callback to call at the end
+ * @param {Function} msgCallback - msgCallback to call at the end
  * @param {Object} options
  * @property {string} options.outputDir - specify the output directory, default the directory where the input file is in
  * @return {string} - error or output file path
@@ -306,13 +306,18 @@ export const createMetadata = (data: (number | string | Buffer)[], version = 0) 
 export const startEncrypt = async (
   password: string,
   inputPath: string,
-  callback: (message: string) => void,
+  msgCallback: (message: string) => void,
+  endCallback: (message: unknown) => void,
   options?: {
     outputDir?: string;
     outputFilename?: string;
   },
 ) => {
   try {
+    msgCallback('准备活动中');
+
+    if (!password) msgCallback('请输入密码');
+
     const isInputFile = isFile(inputPath);
     const inputDir = dirname(inputPath);
     const inputExt = extname(inputPath);
@@ -344,6 +349,7 @@ export const startEncrypt = async (
       [32, 32],
     );
 
+    msgCallback('加密中');
     const {
       algorithm: enAlgorithm,
       iv,
@@ -353,6 +359,8 @@ export const startEncrypt = async (
       outputDir: outputDir,
       outputFilename,
     });
+
+    msgCallback('计算哈希值');
     const {hash, algorithm: hashAlgorithm} = await HMAC(hashKey, outputPath);
     const metadata = createMetadata([
       kdfIteration,
@@ -372,13 +380,20 @@ export const startEncrypt = async (
     if (!isInputFile) {
       unlinkSync(inputPath);
     }
-    callback('加密成功');
+    endCallback({
+      code: -1,
+      info: '加密成功',
+      outputPath,
+    });
 
     return outputPath;
   } catch (err) {
     console.log(err);
     if (typeof err === 'string') {
-      callback('error');
+      endCallback({
+        code: 1,
+        info: '错误',
+      });
     }
     return 'error';
   }

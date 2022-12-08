@@ -15,7 +15,13 @@
       >
         取消
       </BaseButton>
-      <BaseButton type="success">打开文件位置</BaseButton>
+      <BaseButton
+        v-if="finalFilePath"
+        type="success"
+        @click="showFile(finalFilePath)"
+      >
+        打开文件位置
+      </BaseButton>
     </div>
     <div class="password">
       <BaseInput
@@ -35,7 +41,7 @@
 </template>
 
 <script setup lang="ts">
-import {selectFile} from '#preload';
+import {selectFile, invokeEncrypt, showFile} from '#preload';
 import {ref, reactive, computed} from 'vue';
 import AppInfo from './AppInfo.vue';
 // import type {Event} from 'electron';
@@ -52,6 +58,7 @@ const formState = reactive({
   password: '',
   outputPath: '',
 });
+const finalFilePath = ref('');
 const mainButtonText = computed(() => {
   return formState.inputPath ? '加密' : '打开';
 });
@@ -59,10 +66,15 @@ const info = ref('');
 
 // input file
 const getInputFile = (type: 'file' | 'dir') => {
-  selectFile(type, (event: Event, filePath: string) => {
-    formState.inputPath = filePath;
-    info.value = '已选择' + filePath;
-  });
+  finalFilePath.value = '';
+  if (formState.inputPath) {
+    en();
+  } else {
+    selectFile(type, (event: Event, filePath: string) => {
+      formState.inputPath = filePath;
+      info.value = '已选择' + filePath;
+    });
+  }
 };
 
 const clearInputPath = () => {
@@ -76,18 +88,46 @@ const clearInputPath = () => {
 //   });
 // };
 
-// const en = () => {
-//   if (!inputPath.value || !outputPath.value) {
-//     msg.value = '路径不能为空';
-//   }
-//   msg.value = '开始加密';
-//   loading.value = true;
+const en = () => {
+  if (!formState.inputPath) {
+    info.value = '路径不能为空';
+  }
+  if (!formState.password) {
+    info.value = '请输入密码';
+  }
+  loading.value = true;
+  finalFilePath.value = '';
 
-//   invokeEncrypt(inputPath.value, outputPath.value, (_, message: string) => {
-//     msg.value = message;
-//     loading.value = false;
-//   });
-// };
+  const options = formState.outputPath ? {outputDir: formState.outputPath} : {};
+
+  invokeEncrypt(
+    formState.password,
+    formState.inputPath,
+    (_, message: string) => {
+      info.value = message;
+    },
+    (
+      _,
+      message: {
+        code: number;
+        info: string;
+        outputPath?: string;
+      },
+    ) => {
+      info.value = message.info;
+      loading.value = false;
+      if (message.code === -1) {
+        formState.inputPath = '';
+        formState.password = '';
+        formState.outputPath = '';
+        console.log(message.outputPath);
+        finalFilePath.value = message.outputPath ?? '';
+      }
+    },
+
+    options,
+  );
+};
 </script>
 
 <style lang="scss" scoped>
