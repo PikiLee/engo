@@ -3,7 +3,7 @@ const {ipcRenderer} = require('electron');
 import type {IpcRendererEvent} from 'electron';
 
 export const selectFile = (
-  type: 'file' | 'dir',
+  type: ('file' | 'dir')[],
   callback: (event: Event, type: string) => void,
 ) => {
   ipcRenderer.invoke('selectFile', type);
@@ -30,5 +30,3 @@ export const invokeEncrypt = (
   ipcRenderer.on('encryptMsg', callback);
   ipcRenderer.once('encryptEnd', endCallback);
 };
-
-

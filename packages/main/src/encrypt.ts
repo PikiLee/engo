@@ -316,7 +316,7 @@ export const startEncrypt = async (
   try {
     msgCallback('准备活动中');
 
-    if (!password) msgCallback('请输入密码');
+    if (!password) throw('请输入密码');
 
     const isInputFile = isFile(inputPath);
     const inputDir = dirname(inputPath);

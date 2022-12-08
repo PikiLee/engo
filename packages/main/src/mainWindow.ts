@@ -1,5 +1,5 @@
 // import {startEncrypt} from './encrypt';
-import {app, BrowserWindow, ipcMain, shell} from 'electron';
+import {app, BrowserWindow, ipcMain, shell, type OpenDialogOptions} from 'electron';
 import {join} from 'path';
 import {URL} from 'url';
 import {startEncrypt} from './encrypt';
@@ -25,9 +25,20 @@ async function createWindow() {
   const sendEncryptMessage = curriedSendMessage('encryptMsg');
   const sendEncryptEndMessage = curriedSendMessage('encryptEnd');
 
-  ipcMain.handle('selectFile', async (_, type: 'file' | 'dir') => {
-    const openType = type === 'file' ? 'openFile' : 'openDirectory';
-    const res = await dialog.showOpenDialog({properties: [openType]});
+  ipcMain.handle('selectFile', async (_, type: ('file' | 'dir')[]) => {
+    let properties = [] as OpenDialogOptions['properties'];
+    if (properties !== undefined) {
+      if (type.includes('file')) {
+        properties.push('openFile');
+      }
+      if (type.includes('dir')) {
+        properties.push('openDirectory');
+      }
+      if (type.includes('file') && type.includes('dir')) {
+        properties = undefined;
+      }
+    }
+    const res = await dialog.showOpenDialog({properties});
     browserWindow.webContents.send('filePath', res.filePaths[0] ?? '');
   });
   ipcMain.handle(

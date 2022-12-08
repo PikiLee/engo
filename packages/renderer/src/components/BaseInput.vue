@@ -103,7 +103,7 @@ onMounted(() => {
 
 // type: dir
 const getOutputPath = () => {
-  selectFile('dir', (event: Event, filePath: string) => {
+  selectFile(['dir'], (event: Event, filePath: string) => {
     value.value = filePath;
   });
 };

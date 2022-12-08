@@ -65,12 +65,12 @@ const mainButtonText = computed(() => {
 const info = ref('');
 
 // input file
-const getInputFile = (type: 'file' | 'dir') => {
+const getInputFile = () => {
   finalFilePath.value = '';
   if (formState.inputPath) {
     en();
   } else {
-    selectFile(type, (event: Event, filePath: string) => {
+    selectFile(['dir', 'file'], (event: Event, filePath: string) => {
       formState.inputPath = filePath;
       info.value = '已选择' + filePath;
     });
@@ -82,18 +82,14 @@ const clearInputPath = () => {
   info.value = '选择已取消';
 };
 
-// const getOutputPath = () => {
-//   selectFile('dir', (event: Event, filePath: string) => {
-//     outputPath.value = filePath;
-//   });
-// };
-
 const en = () => {
   if (!formState.inputPath) {
     info.value = '路径不能为空';
+    return;
   }
   if (!formState.password) {
     info.value = '请输入密码';
+    return;
   }
   loading.value = true;
   finalFilePath.value = '';
