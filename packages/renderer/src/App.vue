@@ -15,12 +15,14 @@ const activeKey = ref(1);
       :key="1"
       tab="加密"
     >
-      <EncryptionHome></EncryptionHome>
+      <EncryptionHome type="en"></EncryptionHome>
     </TabPane>
     <TabPane
       :key="2"
       tab="解密"
-    ></TabPane>
+    >
+      <EncryptionHome type="de"></EncryptionHome>
+    </TabPane>
   </AppTabs>
 </template>
 

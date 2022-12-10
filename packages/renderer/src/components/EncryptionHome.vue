@@ -65,13 +65,17 @@
 </template>
 
 <script setup lang="ts">
-import {selectFile, invokeEncrypt, showFile, waitForEnMessage} from '#preload';
+import {selectFile, invokeEncrypt, showFile, waitForEnMessage, waitForDeMessage} from '#preload';
 import {ref, reactive, computed} from 'vue';
 import AppInfo from './AppInfo.vue';
 import AppLoading from './AppLoading.vue';
 import BaseInput from './BaseInput.vue';
 import BaseButton from './BaseButton.vue';
 import AppModal from './AppModal.vue';
+
+const props = defineProps<{
+  type: 'en' | 'de';
+}>();
 
 const loading = ref(false);
 const formState = reactive({
@@ -81,19 +85,22 @@ const formState = reactive({
 });
 const finalFilePath = ref('');
 const mainButtonText = computed(() => {
-  return formState.inputPath ? '加密' : '打开';
+  const text = props.type === 'en' ? '加密' : '解密';
+  return formState.inputPath ? text : '打开';
 });
 const info = ref('');
 const modalVisible = ref(false);
 
-// input file
+// input
 const chooseInputType = () => {
   if (loading.value) return;
   finalFilePath.value = '';
   if (formState.inputPath) {
     en();
-  } else {
+  } else if (props.type === 'en') {
     modalVisible.value = true;
+  } else {
+    getInputFile();
   }
 };
 
@@ -136,6 +143,7 @@ const en = () => {
   finalFilePath.value = '';
 
   invokeEncrypt(
+    props.type,
     formState.password,
     formState.inputPath,
 
@@ -144,23 +152,43 @@ const en = () => {
 };
 
 // wait for message sent from main process
-waitForEnMessage(
-  (_, message: string) => {
-    info.value = message;
-  },
-  (_, message: string) => {
-    info.value = message;
-    loading.value = false;
-  },
-  (_, message) => {
-    info.value = '加密成功';
-    loading.value = false;
-    formState.inputPath = '';
-    formState.password = '';
-    formState.outputPath = '';
-    finalFilePath.value = message;
-  },
-);
+if (props.type === 'en') {
+  waitForEnMessage(
+    (_, message: string) => {
+      info.value = message;
+    },
+    (_, message: string) => {
+      info.value = message;
+      loading.value = false;
+    },
+    (_, message) => {
+      info.value = '加密成功';
+      loading.value = false;
+      formState.inputPath = '';
+      formState.password = '';
+      formState.outputPath = '';
+      finalFilePath.value = message;
+    },
+  );
+} else {
+  waitForDeMessage(
+    (_, message: string) => {
+      info.value = message;
+    },
+    (_, message: string) => {
+      info.value = message;
+      loading.value = false;
+    },
+    (_, message) => {
+      info.value = '解密成功';
+      loading.value = false;
+      formState.inputPath = '';
+      formState.password = '';
+      formState.outputPath = '';
+      finalFilePath.value = message;
+    },
+  );
+}
 </script>
 
 <style lang="scss" scoped>

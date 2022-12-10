@@ -1,3 +1,4 @@
+import {Decrypter} from './encrypt';
 // import { startEncrypt, Encrypter } from './encrypt';
 import type {IpcMainEvent, IpcMainInvokeEvent} from 'electron';
 import {app, BrowserWindow, ipcMain, shell} from 'electron';
@@ -9,6 +10,7 @@ const _ = require('lodash');
 
 function handleEncrypt(
   event: IpcMainEvent,
+  type: 'en' | 'de',
   password: string,
   inputPath: string,
   outputPath?: string,
@@ -23,8 +25,13 @@ function handleEncrypt(
   }
 
   const curriedSend = _.curry(send);
-  const encrypter = new Encrypter(password, inputPath, curriedSend, outputPath);
-  encrypter.start();
+  if (type === 'en') {
+    const encrypter = new Encrypter(password, inputPath, curriedSend, outputPath);
+    encrypter.start();
+  } else {
+    const decrypter = new Decrypter(password, inputPath, curriedSend, outputPath);
+    decrypter.start();
+  }
 }
 
 export type SelectFilePropterties = Array<
@@ -43,9 +50,6 @@ function handleFileOpen(event: IpcMainInvokeEvent, properties: SelectFilePropter
   const webContents = event.sender;
   const win = BrowserWindow.fromWebContents(webContents);
   if (!win) throw '找不到窗口';
-  // if (!properties) {
-  //   dislog.sho
-  // }
   const filePaths = dialog.showOpenDialogSync(win, {properties});
   if (filePaths) {
     webContents.send('result:dialog:selectFile', filePaths[0]);
