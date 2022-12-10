@@ -1,32 +1,34 @@
 <template>
-  <div
-    v-if="value"
-    class="container"
-  >
-    <div class="title">{{ title }}</div>
-    <div class="contents">
-      <slot />
-    </div>
+  <Teleport to="body">
     <div
-      v-if="cancel || ok"
-      class="actions"
+      v-if="value"
+      class="container"
     >
-      <BaseButton
-        v-if="cancel"
-        type="warning"
-        @click="handleCancel"
+      <div class="title">{{ title }}</div>
+      <div class="contents">
+        <slot />
+      </div>
+      <div
+        v-if="cancel || ok"
+        class="actions"
       >
-        取消
-      </BaseButton>
-      <BaseButton
-        v-if="ok"
-        type="success"
-        @click="handleOk"
-      >
-        确定
-      </BaseButton>
+        <BaseButton
+          v-if="cancel"
+          type="warning"
+          @click="handleCancel"
+        >
+          取消
+        </BaseButton>
+        <BaseButton
+          v-if="ok"
+          type="success"
+          @click="handleOk"
+        >
+          确定
+        </BaseButton>
+      </div>
     </div>
-  </div>
+  </Teleport>
 </template>
 
 <script setup lang="ts">
