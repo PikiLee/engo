@@ -4,12 +4,12 @@ const tar = require('tar');
 
 export class Compressor {
   /**
-   * compress a file or a directory
-   * @param {string} inputPath - the path of the input
+   * tar a file or a directory to .tar file, no compression happening now.
+   * @param {string} inputPath - the path of the input, assumes a file or a directory
    * @param {Object} options
-   * @property {string} options.outputPath - optional
-   * @return {Promise<string>} output compressed file path
-   */
+   * @property {string} options.outputPath - output path, assumes a directory that will contain the output file or a nonexistent file under whose name the output file will be created.
+   * @return {Promise<string>} output file path
+ **/
   static compress = (
     inputPath: string,
     options?: {
@@ -24,9 +24,9 @@ export class Compressor {
 
     const output = new Path(outputPath);
     if (output.doesExist() && output.isDirectory()) {
-      output.join(input.basename() + '.tgz');
+      output.join(input.basename() + '.tar');
     } else {
-      output.addExtname('.tgz');
+      output.addExtname('.tar');
     }
     if (!input.doesExist()) throw '要压缩的文件不存在';
 
@@ -44,9 +44,13 @@ export class Compressor {
       });
   };
 
-  /**
-   * Uncompress a file.
-   */
+   /**
+   * untar a .tar file, no compression happening now.
+   * @param {string} inputPath - the path of the input, assumes a .tar file
+   * @param {Object} options
+   * @property {string} options.outputPath - output path, assumes a directory that will contain the output file. 
+   * @return {Promise<string>} output file or directory path
+ **/
   static uncompress = async (
     inputPath: string,
     options?: {

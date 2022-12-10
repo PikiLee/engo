@@ -9,7 +9,7 @@ describe('test compress', () => {
 
     const expectedOutput = new Path(await Compressor.compress(testFile.getPath()));
 
-    expect(expectedOutput.extname()).toBe('.tgz');
+    expect(expectedOutput.extname()).toBe('.tar');
     expect(expectedOutput.doesExist()).toBe(true);
 
     testFile.delete();
@@ -30,7 +30,7 @@ describe('test compress', () => {
       }),
     );
 
-    expect(expectedOutput.extname()).toBe('.tgz');
+    expect(expectedOutput.extname()).toBe('.tar');
     expect(expectedOutput.doesExist()).toBe(true);
     testFile.delete();
     expectedOutput.delete();

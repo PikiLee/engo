@@ -509,7 +509,7 @@ export class Decrypter extends BaseCrypto {
 
   decrypt() {
     this.temp = new Path(fs.mkdtempSync(join(tmpdir(), 'engo-')));
-    this.temp.join(this.input.name()).addExtname('.tgz');
+    this.temp.join(this.input.name()).addExtname('.tar');
 
     const decipher = crypto.createDecipheriv(
       EnAlgorithm[this.encryptOptions.algorithm],
@@ -536,22 +536,30 @@ export class Decrypter extends BaseCrypto {
    * Start decrypt a file.
    */
   async start() {
-    await this.retrieveMetaData();
-    // generate key from password
-    this.generateKeyWithScrypt().getEnKeyandHashKey();
+    try {
+      this.sendInfo('准备解密中');
+      await this.retrieveMetaData();
+      // generate key from password
+      this.generateKeyWithScrypt().getEnKeyandHashKey();
 
-    // verify mac code
-    await this.authVerify();
-    // decrypt
-    await this.decrypt();
+      // verify mac code
+      this.sendInfo('验证文件完整性中');
+      await this.authVerify();
+      // decrypt
+      this.sendInfo('解密中');
+      await this.decrypt();
 
-    if (!this.temp) throw '中继压缩文件不存在';
-    await Compressor.uncompress(this.temp.getPath(), {outputPath: this.output.getPath()});
-    this.output
-      .join(this.input.name().replace(/\d\d\d\d-\d\d-\d\dT\d\d-\d\d-\d\d__/, ''))
-      .addExtname(this.originalFileExt);
+      if (!this.temp) throw '中继压缩文件不存在';
+      await Compressor.uncompress(this.temp.getPath(), {outputPath: this.output.getPath()});
+      this.output
+        .join(this.input.name().replace(/\d\d\d\d-\d\d-\d\dT\d\d-\d\d-\d\d__/, ''))
+        .addExtname(this.originalFileExt);
 
-    this.temp.parent().delete();
-    return this;
+      this.temp.parent().delete();
+      this.sendEnd(this.output.getPath());
+      return this;
+    } catch (err) {
+      this.sendError(JSON.stringify(err));
+    }
   }
 }

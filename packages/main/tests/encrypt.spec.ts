@@ -21,11 +21,12 @@ describe('test split key', () => {
   });
 });
 
-describe('test encrypt file', () => {
+describe.only('test encrypt file', () => {
   test('test enctyption function', async () => {
     const testFile = utils.createFile();
     const encrypter = new Encrypter(utils.password, testFile.getPath(), utils.createCurrySend());
     encrypter.getEnKeyandHashKey();
+    encrypter.temp = testFile;
     await encrypter.encrypt();
     expect(encrypter.output.doesExist()).toBe(true);
     encrypter.output.delete();
@@ -44,11 +45,12 @@ describe('test HMAC', () => {
   });
 });
 
-describe('test create metadata', () => {
+describe.only('test create metadata', () => {
   test('create metadata', async () => {
     const testFile = utils.createFile();
     const encrypter = new Encrypter(utils.password, testFile.getPath(), utils.createCurrySend());
     encrypter.getEnKeyandHashKey();
+    encrypter.temp = testFile;
     await encrypter.encrypt();
     await encrypter.HMAC(encrypter.output.getPath());
     encrypter.genMetadata();
@@ -137,7 +139,7 @@ describe('test decrypt function', () => {
   }, 20000);
 });
 
-describe.only('test startDecrypt function', () => {
+describe('test startDecrypt function', () => {
   test('test startDecrypt.', async () => {
     const testFile = utils.createFile();
 
