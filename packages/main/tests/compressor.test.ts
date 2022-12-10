@@ -36,7 +36,7 @@ describe('test compress', () => {
     expectedOutput.delete();
   });
 
-  test('compress directory', async () => {
+  test.only('compress directory', async () => {
     const testDir = utils.createDir();
 
     const expectedOutput = new Path(await Compressor.compress(testDir.getPath()));

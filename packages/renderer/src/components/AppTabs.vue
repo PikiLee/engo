@@ -1,111 +1,110 @@
-<template>
-  <div>
-    <header class="head">
-      <div
-        ref="tabContainer"
-        class="tabs"
-      >
-        <div
-          v-for="tab in tabs"
-          ref="tabEls"
-          :key="tab.key"
-          :data-key="tab.key"
-          class="tab"
-          :class="{active: activeKey === tab.key}"
-          @click="() => $emit('update:activeKey', tab.key)"
-        >
-          {{ tab.tab.split('').reduce((p, c) => p + '&nbsp;&nbsp;&nbsp;' + c) }}
-        </div>
-
-        <span
-          ref="barEl"
-          class="bar"
-        ></span>
-      </div>
-    </header>
-    <div class="content"> <slot /> </div>
-  </div>
-</template>
-
-<script setup lang="ts">
-import {useSlots, watch, ref, type VNode, onMounted} from 'vue';
+<script lang="ts">
+import {watch, ref, type VNode, onMounted, defineComponent, h} from 'vue';
 import {gsap} from 'gsap';
 
-const props = defineProps<{
-  activeKey: string | number;
-}>();
-
-defineEmits(['update:activeKey']);
-
-const slots = useSlots();
-
 interface Tab {
-  key: string | number;
+  key: number;
   tab: string;
 }
 
-const tabs = ref<Tab[]>([]);
+export default defineComponent({
+  props: {
+    activeKey: {
+      type: Number,
+      required: true,
+    },
+  },
+  emits: ['update:activeKey'],
+  setup(props, {emit, slots}) {
+    const tabs = ref<Tab[]>([]);
 
-const parseTabList = (children: VNode[]) => {
-  return children
-    .map(child => {
-      if (child.props) {
-        const {key, tab} = child.props;
-        return {
-          key,
-          tab,
-        };
+    const parseTabList = (children: VNode[]) => {
+      return children
+        .map(child => {
+          if (child.props) {
+            const {key, tab} = child.props;
+            return {
+              key,
+              tab,
+            };
+          }
+
+          return null;
+        })
+        .filter(tab => tab);
+    };
+
+    if (slots.default) {
+      const parsedTabs = parseTabList(slots.default());
+      if (parsedTabs) tabs.value = parsedTabs as Tab[];
+    }
+
+    // animation
+    const tabContainer = ref<HTMLElement | null>(null);
+
+    const barEl = ref<HTMLElement | null>(null);
+
+    const relocateBar = () => {
+      if (tabContainer.value) {
+        const activeTab = tabContainer.value.querySelector(`[data-key="${props.activeKey}"`); 
+        if (activeTab) {
+          const activeElRect = activeTab.getBoundingClientRect();
+          const containerRect = tabContainer.value.getBoundingClientRect();
+
+          const distanceX = activeElRect.x - containerRect.x + activeElRect.width * 0.5;
+          const distanceY = activeElRect.y - containerRect.y + activeElRect.height * 1.2;
+
+          gsap.to(barEl.value, {
+            left: distanceX,
+            top: distanceY,
+          });
+        }
       }
+    };
 
-      return null;
-    })
-    .filter(tab => tab);
-};
+    onMounted(() => {
+      watch(
+        () => props.activeKey,
+        () => {
+          relocateBar();
+        },
+        {immediate: true},
+      );
 
-if (slots.default) {
-  const parsedTabs = parseTabList(slots.default());
-  if (parsedTabs) tabs.value = parsedTabs as Tab[];
-}
-
-// animation
-const tabContainer = ref<HTMLElement | null>(null);
-const tabEls = ref<HTMLElement[] | null>(null);
-const barEl = ref<HTMLElement | null>(null);
-
-const relocateBar = (activeKey: number | string) => {
-  if (tabEls.value && barEl.value && tabContainer.value) {
-    const activeEl = tabEls.value.find(tabEl => {
-      return tabEl.dataset.key === String(activeKey);
+      window.addEventListener('resize', () => {
+        relocateBar();
+      });
     });
 
-    if (activeEl) {
-      const activeElRect = activeEl.getBoundingClientRect();
-
-      const containerRect = tabContainer.value.getBoundingClientRect();
-
-      const distanceX = activeElRect.x - containerRect.x + activeElRect.width * 0.5;
-      const distanceY = activeElRect.y - containerRect.y + activeElRect.height * 1.2;
-
-      gsap.to(barEl.value, {
-        left: distanceX,
-        top: distanceY,
-      });
-    }
-  }
-};
-
-onMounted(() => {
-  watch(
-    () => props.activeKey,
-    newValue => {
-      relocateBar(newValue);
-    },
-    {immediate: true},
-  );
-
-  window.addEventListener('resize', () => {
-    relocateBar(props.activeKey);
-  });
+    return () =>
+      h('div', [
+        h(
+          'header',
+          {class: 'head'},
+          h('div', {ref: tabContainer, class: 'tabs'}, [
+            tabs.value.map(({key, tab}) => {
+              const classes = 'tab' + (props.activeKey === key ? ' active' : '');
+              return h(
+                'div',
+                {
+                  class: classes,
+                  key,
+                  'data-key': key,
+                  onClick: () => emit('update:activeKey', key),
+                },
+                tab.split('').reduce((p, c) => p + '    ' + c),
+              );
+            }),
+            h('span', {ref: barEl, class: 'bar'}),
+          ]),
+        ),
+        h(
+          'div',
+          {class: 'content'},
+          slots.default ? slots.default().find(s => s.key === props.activeKey) : '',
+        ),
+      ]);
+  },
 });
 </script>
 <style scoped lang="scss">

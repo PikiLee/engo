@@ -35,9 +35,9 @@ export class Compressor {
         {
           file: output.getPath(),
           preservePaths: true,
-          noDirRecurse: true,
+          cwd: input.parent().getPath(),
         },
-        [input.getPath()],
+        [input.basename()],
       )
       .then(() => {
         return output.getPath();

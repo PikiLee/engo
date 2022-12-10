@@ -20,7 +20,7 @@ export const waitForEnMessage = (
   endCallback: (event: IpcRendererEvent, message: string) => void,
 ) => {
   ipcRenderer.on('encryptMsg', infoCallback);
-  ipcRenderer.on('encryptEroor', errorCallback);
+  ipcRenderer.on('encryptError', errorCallback);
   ipcRenderer.on('encryptEnd', endCallback);
 };
 
@@ -30,6 +30,6 @@ export const waitForDeMessage = (
   endCallback: (event: IpcRendererEvent, message: string) => void,
 ) => {
   ipcRenderer.on('decryptMsg', infoCallback);
-  ipcRenderer.on('decryptEroor', errorCallback);
+  ipcRenderer.on('decryptError', errorCallback);
   ipcRenderer.on('decryptEnd', endCallback);
 };

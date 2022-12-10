@@ -61,7 +61,6 @@ export class Path {
   }
 
   changeExtname(ext: string) {
-    if (this.doesExist() && this.isDirectory()) throw '不能给目录修改后缀名';
     if (!this.extname()) this.addExtname(ext);
     this.path = this.path.substring(0, this.path.lastIndexOf(this.extname())) + ext;
 
@@ -69,7 +68,6 @@ export class Path {
   }
 
   addExtname(ext: string) {
-    if (this.doesExist() && this.isDirectory()) throw '不能给目录添加后缀名';
     this.path += ext;
     return this;
   }

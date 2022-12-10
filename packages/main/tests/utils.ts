@@ -5,16 +5,18 @@ const crypto = require('node:crypto');
 export const createFile = () => {
   const testFile = new Path(testDir);
   testFile.join(crypto.randomUUID() + '.txt');
-  // testFile.join('123.txt');
   testFile.mkFile();
   return testFile;
 };
 
 export const createDir = () => {
-  const testFile = new Path(testDir);
-  testFile.join(crypto.randomUUID());
-  testFile.mkDir();
-  return testFile;
+  const dir = new Path(testDir);
+  dir.join(crypto.randomUUID());
+  dir.mkDir();
+  const testFile = new Path(dir.getPath());
+  testFile.join(crypto.randomUUID() + '.txt');
+  testFile.mkFile();
+  return dir;
 };
 
 export const createCurrySend = () => {

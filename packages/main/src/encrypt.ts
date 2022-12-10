@@ -340,7 +340,7 @@ export class Encrypter extends BaseCrypto {
    */
   async start() {
     try {
-      this.sendInfo('准备活动中');
+      this.sendInfo('准备加密中');
 
       // compress
       this.temp = new Path(fs.mkdtempSync(join(tmpdir(), 'engo-')));
