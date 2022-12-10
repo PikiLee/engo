@@ -5,7 +5,7 @@ import {join} from 'path';
 import {URL} from 'url';
 import {Encrypter} from './encrypt';
 const {dialog} = require('electron');
-import * as _ from 'lodash-es';
+const _ = require('lodash');
 
 function handleEncrypt(
   event: IpcMainEvent,

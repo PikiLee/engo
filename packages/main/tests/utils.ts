@@ -1,4 +1,4 @@
-import * as _ from 'lodash-es';
+const _ = require('lodash');
 import {Path} from '../src/path';
 const crypto = require('node:crypto');
 

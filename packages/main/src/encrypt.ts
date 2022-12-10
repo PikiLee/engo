@@ -9,7 +9,7 @@ import {createCipheriv} from 'node:crypto';
 import {join} from 'path';
 import {createHmac} from 'node:crypto';
 import {tmpdir} from 'node:os';
-import * as _ from 'lodash-es';
+const _ = require('lodash');
 import type {CurriedFunction1, CurriedFunction2} from 'lodash';
 import {Path} from './path';
 const fs = require('node:fs');

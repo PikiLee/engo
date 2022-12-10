@@ -1,4 +1,4 @@
-import * as _ from 'lodash-es';
+const _ = require('lodash');
 import {Path} from './path';
 const tar = require('tar');
 

@@ -52,13 +52,13 @@
   },
   "dependencies": {
     "@ant-design/icons-vue": "^6.1.0",
-    "@types/lodash-es": "^4.17.6",
+    "@types/lodash": "^4.14.191",
     "@types/node": "^18.11.10",
     "ant-design-vue": "^3.2.15",
     "dayjs": "^1.11.6",
     "electron-updater": "5.3.0",
     "gsap": "^3.11.3",
-    "lodash-es": "^4.17.21",
+    "lodash": "^4.17.21",
     "pump": "^3.0.0",
     "tar": "^6.1.12",
     "vue": "3.2.45"
