@@ -1,8 +1,28 @@
 <template>
   <div class="container">
+    <AppModal
+      v-model:visible="modalVisible"
+      title="选择输入类型"
+      cancel
+    >
+      <div class="modal">
+        <BaseButton
+          type="success"
+          @click="getInputFile"
+        >
+          文件
+        </BaseButton>
+        <BaseButton
+          type="success"
+          @click="getInputDir"
+        >
+          目录
+        </BaseButton>
+      </div>
+    </AppModal>
     <AppLoading
       :loading="loading"
-      @click:button="getInputFile"
+      @click:button="chooseInputType"
     >
       {{ mainButtonText }}
     </AppLoading>
@@ -49,6 +69,7 @@ import AppInfo from './AppInfo.vue';
 import AppLoading from './AppLoading.vue';
 import BaseInput from './BaseInput.vue';
 import BaseButton from './BaseButton.vue';
+import AppModal from './AppModal.vue';
 
 const loading = ref(false);
 const formState = reactive({
@@ -61,19 +82,38 @@ const mainButtonText = computed(() => {
   return formState.inputPath ? '加密' : '打开';
 });
 const info = ref('');
+const modalVisible = ref(false);
 
 // input file
-const getInputFile = () => {
+const chooseInputType = () => {
   if (loading.value) return;
   finalFilePath.value = '';
   if (formState.inputPath) {
     en();
   } else {
-    selectFile((_, message: string) => {
+    modalVisible.value = true;
+  }
+};
+
+const getInputFile = () => {
+  selectFile(
+    (_, message: string) => {
       formState.inputPath = message;
       info.value = '已选择' + formState.inputPath;
-    });
-  }
+    },
+    ['openFile'],
+  );
+  modalVisible.value = false;
+};
+const getInputDir = () => {
+  selectFile(
+    (_, message: string) => {
+      formState.inputPath = message;
+      info.value = '已选择' + formState.inputPath;
+    },
+    ['openDirectory'],
+  );
+  modalVisible.value = false;
 };
 
 const clearInputPath = () => {
@@ -126,6 +166,14 @@ waitForEnMessage(
   display: flex;
   flex-direction: column;
   justify-content: start;
+
+  .modal {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 7rem;
+    gap: 2rem;
+  }
 
   .bottom {
     flex: 1;
