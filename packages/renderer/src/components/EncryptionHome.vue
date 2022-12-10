@@ -43,17 +43,13 @@
 </template>
 
 <script setup lang="ts">
-import {selectFile, invokeEncrypt, showFile} from '#preload';
+import {selectFile, invokeEncrypt, showFile, waitForEnMessage} from '#preload';
 import {ref, reactive, computed} from 'vue';
 import AppInfo from './AppInfo.vue';
-// import type {Event} from 'electron';
 import AppLoading from './AppLoading.vue';
 import BaseInput from './BaseInput.vue';
 import BaseButton from './BaseButton.vue';
 
-// const inputPath = ref('');
-// const outputPath = ref('');
-// const msg = ref('');
 const loading = ref(false);
 const formState = reactive({
   inputPath: '',
@@ -67,25 +63,14 @@ const mainButtonText = computed(() => {
 const info = ref('');
 
 // input file
-const getInputFile = () => {
+const getInputFile = async () => {
   if (loading.value) return;
   finalFilePath.value = '';
   if (formState.inputPath) {
     en();
   } else {
-    selectFile(
-      ['dir', 'file'],
-      (
-        event: Event,
-        path: {
-          path: string;
-          basename: string;
-        },
-      ) => {
-        formState.inputPath = path.path;
-        info.value = '已选择' + path.basename;
-      },
-    );
+    const path = await selectFile([]);
+    formState.inputPath = String(path);
   }
 };
 
@@ -106,36 +91,32 @@ const en = () => {
   loading.value = true;
   finalFilePath.value = '';
 
-  const options = formState.outputPath ? {outputDir: formState.outputPath} : {};
-
   invokeEncrypt(
     formState.password,
     formState.inputPath,
-    (_, message: string) => {
-      info.value = message;
-    },
-    (
-      _,
-      message: {
-        code: number;
-        info: string;
-        outputPath?: string;
-      },
-    ) => {
-      info.value = message.info;
-      loading.value = false;
-      if (message.code === -1) {
-        formState.inputPath = '';
-        formState.password = '';
-        formState.outputPath = '';
-        console.log(message.outputPath);
-        finalFilePath.value = message.outputPath ?? '';
-      }
-    },
 
-    options,
+    formState.outputPath,
   );
 };
+
+// wait for message sent from main process
+waitForEnMessage(
+  (_, message: string) => {
+    info.value = message;
+  },
+  (_, message: string) => {
+    info.value = message;
+    loading.value = false;
+  },
+  (_, message) => {
+    info.value = '加密成功';
+    loading.value = false;
+    formState.inputPath = '';
+    formState.password = '';
+    formState.outputPath = '';
+    finalFilePath.value = message;
+  },
+);
 </script>
 
 <style lang="scss" scoped>

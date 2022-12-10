@@ -17,7 +17,7 @@
     "compile": "cross-env MODE=production npm run build && electron-builder build --config .electron-builder.config.js --dir --config.asar=false",
     "test": "npm run test:main && npm run test:preload && npm run test:renderer && npm run test:e2e",
     "test:e2e": "npm run build && vitest run",
-    "test:main": "vitest run -r packages/main --passWithNoTests decrypt",
+    "test:main": "vitest run -r packages/main --passWithNoTests encrypt",
     "test:preload": "vitest run -r packages/preload --passWithNoTests",
     "test:renderer": "vitest run -r packages/renderer --passWithNoTests EncryptionHome",
     "watch": "node scripts/watch.mjs",
@@ -30,7 +30,6 @@
     "format": "npx prettier --write \"**/*.{js,mjs,cjs,ts,mts,cts,vue,json}\""
   },
   "devDependencies": {
-    "@types/lodash-es": "^4.17.6",
     "@typescript-eslint/eslint-plugin": "5.45.0",
     "@vitejs/plugin-vue": "3.2.0",
     "@vue/test-utils": "2.2.4",
@@ -53,6 +52,7 @@
   },
   "dependencies": {
     "@ant-design/icons-vue": "^6.1.0",
+    "@types/lodash-es": "^4.17.6",
     "@types/node": "^18.11.10",
     "ant-design-vue": "^3.2.15",
     "dayjs": "^1.11.6",

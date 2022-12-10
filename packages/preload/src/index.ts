@@ -6,5 +6,5 @@ import { showFile } from './utils';
 
 export {sha256sum} from './nodeCrypto';
 export {versions} from './versions';
-export {selectFile, invokeEncrypt} from './encrypt';
+export {selectFile, invokeEncrypt, waitForEnMessage} from './encrypt';
 export {showFile};

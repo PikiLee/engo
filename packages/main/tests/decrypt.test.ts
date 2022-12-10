@@ -111,7 +111,7 @@ describe('test startDecrypt function', () => {
     });
   }, 10000);
 
-  test.only('test startDecrypt a encrypted file.', async () => {
+  test('test startDecrypt a encrypted file.', async () => {
     const input = await startEncrypt(password, inputPath, (message: string) => {
       console.log(message);
     });

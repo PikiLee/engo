@@ -1,35 +1,21 @@
-import type {Event} from 'electron';
+import type {SelectFilePropterties} from './../../main/src/mainWindow';
 const {ipcRenderer} = require('electron');
 import type {IpcRendererEvent} from 'electron';
 
-export const selectFile = (
-  type: ('file' | 'dir')[],
-  callback: (event: Event, path: {
-    path: string,
-    basename: string
-  }) => void,
-) => {
-  ipcRenderer.invoke('selectFile', type);
-  ipcRenderer.once('filePath', callback);
+export const selectFile = (properties: SelectFilePropterties) => {
+  ipcRenderer.invoke('dialog:selectFile', properties);
 };
 
-export const invokeEncrypt = (
-  password: string,
-  inputPath: string,
-  callback: (event: IpcRendererEvent, message: string) => void,
-  endCallback: (
-    event: IpcRendererEvent,
-    message: {
-      code: number;
-      info: string;
-      outputPath?: string;
-    },
-  ) => void,
-  options?: {
-    outputDir?: string;
-  },
+export const invokeEncrypt = (password: string, inputPath: string, outputPath?: string) => {
+  ipcRenderer.send('startEncrypt', password, inputPath, outputPath);
+};
+
+export const waitForEnMessage = (
+  infoCallback: (event: IpcRendererEvent, message: string) => void,
+  errorCallback: (event: IpcRendererEvent, message: string) => void,
+  endCallback: (event: IpcRendererEvent, message: string) => void,
 ) => {
-  ipcRenderer.invoke('startEncrypt', {password, inputPath, options});
-  ipcRenderer.on('encryptMsg', callback);
+  ipcRenderer.on('encryptMsg', infoCallback);
+  ipcRenderer.on('encryptEroor', errorCallback);
   ipcRenderer.once('encryptEnd', endCallback);
 };

@@ -1,10 +1,59 @@
-// import {startEncrypt} from './encrypt';
-import {app, BrowserWindow, ipcMain, shell, type OpenDialogOptions} from 'electron';
-import {basename, join} from 'path';
+// import { startEncrypt, Encrypter } from './encrypt';
+import type {IpcMainEvent, IpcMainInvokeEvent} from 'electron';
+import {app, BrowserWindow, ipcMain, shell} from 'electron';
+import {join} from 'path';
 import {URL} from 'url';
-import {startEncrypt} from './encrypt';
+import {Encrypter} from './encrypt';
 const {dialog} = require('electron');
-import {curry} from 'lodash';
+import * as _ from 'lodash-es';
+
+function handleEncrypt(
+  event: IpcMainEvent,
+  password: string,
+  inputPath: string,
+  outputPath?: string,
+) {
+  const webContents = event.sender;
+  const win = BrowserWindow.fromWebContents(webContents);
+  if (!win) throw '找不到窗口';
+
+  function send(channel: string, message: string) {
+    if (!win) throw '找不到窗口';
+    win.webContents.send(channel, message);
+  }
+
+  const curriedSend = _.curry(send);
+  const encrypter = new Encrypter(password, inputPath, curriedSend, outputPath);
+  encrypter.start();
+}
+
+export type SelectFilePropterties = Array<
+  | 'openFile'
+  | 'openDirectory'
+  | 'multiSelections'
+  | 'showHiddenFiles'
+  | 'createDirectory'
+  | 'promptToCreate'
+  | 'noResolveAliases'
+  | 'treatPackageAsDirectory'
+  | 'dontAddToRecent'
+>;
+
+async function handleFileOpen(event: IpcMainInvokeEvent, properties: SelectFilePropterties) {
+  const webContents = event.sender;
+  const win = BrowserWindow.fromWebContents(webContents);
+  if (!win) throw '找不到窗口';
+  const {canceled, filePaths} = await dialog.showOpenDialog(win, {properties});
+  if (canceled) {
+    return;
+  } else {
+    return filePaths[0];
+  }
+}
+
+function handleShowFile(event: IpcMainEvent, path: string) {
+  shell.showItemInFolder(path);
+}
 
 async function createWindow() {
   const browserWindow = new BrowserWindow({
@@ -22,56 +71,9 @@ async function createWindow() {
     },
   });
 
-  const sendMessage = (channel: string, message: unknown) => {
-    browserWindow.webContents.send(channel, message);
-  };
-  const curriedSendMessage = curry(sendMessage);
-  const sendEncryptMessage = curriedSendMessage('encryptMsg');
-  const sendEncryptEndMessage = curriedSendMessage('encryptEnd');
-
-  ipcMain.handle('selectFile', async (_, type: ('file' | 'dir')[]) => {
-    let properties = [] as OpenDialogOptions['properties'];
-    if (properties !== undefined) {
-      if (type.includes('file')) {
-        properties.push('openFile');
-      }
-      if (type.includes('dir')) {
-        properties.push('openDirectory');
-      }
-      if (type.includes('file') && type.includes('dir')) {
-        properties = undefined;
-      }
-    }
-    const res = await dialog.showOpenDialog({properties});
-    const filePath = res.filePaths[0] ?? '';
-    browserWindow.webContents.send('filePath', {path: filePath, basename: basename(filePath)});
-  });
-  ipcMain.handle(
-    'startEncrypt',
-    async (
-      _,
-      args: {
-        password: string;
-        inputPath: string;
-        options?: {
-          outputDir?: string;
-        };
-      },
-    ) => {
-      await startEncrypt(
-        args.password,
-        args.inputPath,
-        sendEncryptMessage,
-        sendEncryptEndMessage,
-        args.options,
-      );
-      browserWindow.webContents.send('encryptEnd', -1);
-    },
-  );
-
-  ipcMain.handle('showFile', (event, path: string) => {
-    shell.showItemInFolder(path);
-  });
+  ipcMain.handle('dialog:selectFile', handleFileOpen);
+  ipcMain.on('startEncrypt', handleEncrypt);
+  ipcMain.on('showFile', handleShowFile);
 
   /**
    * If the 'show' property of the BrowserWindow's constructor is omitted from the initialization options,

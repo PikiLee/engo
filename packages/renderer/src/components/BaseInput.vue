@@ -101,19 +101,8 @@ onMounted(() => {
 });
 
 // type: dir
-const getOutputPath = () => {
-  selectFile(
-    ['dir'],
-    (
-      event: Event,
-      path: {
-        path: string;
-        basename: string;
-      },
-    ) => {
-      value.value = path.path;
-    },
-  );
+const getOutputPath = async () => {
+  value.value = String(await selectFile(['openDirectory']));
 };
 </script>
 
