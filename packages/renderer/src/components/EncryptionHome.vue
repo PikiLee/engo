@@ -63,14 +63,16 @@ const mainButtonText = computed(() => {
 const info = ref('');
 
 // input file
-const getInputFile = async () => {
+const getInputFile = () => {
   if (loading.value) return;
   finalFilePath.value = '';
   if (formState.inputPath) {
     en();
   } else {
-    const path = await selectFile([]);
-    formState.inputPath = String(path);
+    selectFile((_, message: string) => {
+      formState.inputPath = message;
+      info.value = '已选择' + formState.inputPath;
+    });
   }
 };
 
@@ -131,6 +133,7 @@ waitForEnMessage(
       margin-top: 1rem;
     }
     .actions {
+      min-height: 2rem;
       margin-top: 0.8rem;
       display: flex;
       align-items: center;

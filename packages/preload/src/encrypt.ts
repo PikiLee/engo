@@ -2,8 +2,12 @@ import type {SelectFilePropterties} from './../../main/src/mainWindow';
 const {ipcRenderer} = require('electron');
 import type {IpcRendererEvent} from 'electron';
 
-export const selectFile = (properties: SelectFilePropterties) => {
+export const selectFile = (
+  resultCallback: (event: IpcRendererEvent, message: string) => void,
+  properties?: SelectFilePropterties,
+) => {
   ipcRenderer.invoke('dialog:selectFile', properties);
+  ipcRenderer.once('result:dialog:selectFile', resultCallback);
 };
 
 export const invokeEncrypt = (password: string, inputPath: string, outputPath?: string) => {
@@ -17,5 +21,5 @@ export const waitForEnMessage = (
 ) => {
   ipcRenderer.on('encryptMsg', infoCallback);
   ipcRenderer.on('encryptEroor', errorCallback);
-  ipcRenderer.once('encryptEnd', endCallback);
+  ipcRenderer.on('encryptEnd', endCallback);
 };

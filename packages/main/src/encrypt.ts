@@ -361,7 +361,7 @@ export class Encrypter extends BaseCrypto {
 
       this.temp.delete();
       this.temp.parent().delete();
-      this.sendEnd('加密成功');
+      this.sendEnd(this.output.getPath());
 
       return this;
     } catch (err) {

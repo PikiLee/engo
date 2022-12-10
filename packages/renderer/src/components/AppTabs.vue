@@ -71,32 +71,41 @@ if (slots.default) {
 const tabContainer = ref<HTMLElement | null>(null);
 const tabEls = ref<HTMLElement[] | null>(null);
 const barEl = ref<HTMLElement | null>(null);
+
+const relocateBar = (activeKey: number | string) => {
+  if (tabEls.value && barEl.value && tabContainer.value) {
+    const activeEl = tabEls.value.find(tabEl => {
+      return tabEl.dataset.key === String(activeKey);
+    });
+
+    if (activeEl) {
+      const activeElRect = activeEl.getBoundingClientRect();
+
+      const containerRect = tabContainer.value.getBoundingClientRect();
+
+      const distanceX = activeElRect.x - containerRect.x + activeElRect.width * 0.5;
+      const distanceY = activeElRect.y - containerRect.y + activeElRect.height * 1.2;
+
+      gsap.to(barEl.value, {
+        left: distanceX,
+        top: distanceY,
+      });
+    }
+  }
+};
+
 onMounted(() => {
   watch(
     () => props.activeKey,
     newValue => {
-      if (tabEls.value && barEl.value && tabContainer.value) {
-        const activeEl = tabEls.value.find(tabEl => {
-          return tabEl.dataset.key === String(newValue);
-        });
-
-        if (activeEl) {
-          const activeElRect = activeEl.getBoundingClientRect();
-
-          const containerRect = tabContainer.value.getBoundingClientRect();
-
-          const distanceX = activeElRect.x - containerRect.x + activeElRect.width * 0.5;
-          const distanceY = activeElRect.y - containerRect.y + activeElRect.height * 1.2;
-
-          gsap.to(barEl.value, {
-            left: distanceX,
-            top: distanceY,
-          });
-        }
-      }
+      relocateBar(newValue);
     },
     {immediate: true},
   );
+
+  window.addEventListener('resize', () => {
+    relocateBar(props.activeKey);
+  });
 });
 </script>
 <style scoped lang="scss">

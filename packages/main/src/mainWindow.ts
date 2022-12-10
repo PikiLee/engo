@@ -39,15 +39,16 @@ export type SelectFilePropterties = Array<
   | 'dontAddToRecent'
 >;
 
-async function handleFileOpen(event: IpcMainInvokeEvent, properties: SelectFilePropterties) {
+function handleFileOpen(event: IpcMainInvokeEvent, properties: SelectFilePropterties) {
   const webContents = event.sender;
   const win = BrowserWindow.fromWebContents(webContents);
   if (!win) throw '找不到窗口';
-  const {canceled, filePaths} = await dialog.showOpenDialog(win, {properties});
-  if (canceled) {
-    return;
-  } else {
-    return filePaths[0];
+  // if (!properties) {
+  //   dislog.sho
+  // }
+  const filePaths = dialog.showOpenDialogSync(win, {properties});
+  if (filePaths) {
+    webContents.send('result:dialog:selectFile', filePaths[0]);
   }
 }
 
@@ -58,9 +59,9 @@ function handleShowFile(event: IpcMainEvent, path: string) {
 async function createWindow() {
   const browserWindow = new BrowserWindow({
     width: 400,
-    height: 640,
+    height: 800,
     minWidth: 400,
-    minHeight: 640,
+    minHeight: 800,
     show: false, // Use the 'ready-to-show' event to show the instantiated BrowserWindow.
     webPreferences: {
       nodeIntegration: false,
