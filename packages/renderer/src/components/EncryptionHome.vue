@@ -2,18 +2,20 @@
   <div class="container">
     <AppModal
       v-model:visible="modalVisible"
-      title="选择输入类型"
+      title="选择打开类型"
       cancel
     >
       <div class="modal">
         <BaseButton
           type="success"
+          size="md"
           @click="getInputFile"
         >
           文件
         </BaseButton>
         <BaseButton
           type="success"
+          size="md"
           @click="getInputDir"
         >
           目录
