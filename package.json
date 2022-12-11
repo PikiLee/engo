@@ -16,7 +16,7 @@
     "build:win": "cross-env MODE=production npm run build && electron-builder build --config .electron-builder.config.js --windows",
     "test": "npm run test:main && npm run test:preload && npm run test:renderer && npm run test:e2e",
     "test:e2e": "npm run build && vitest run",
-    "test:main": "vitest run -r packages/main --passWithNoTests compressor",
+    "test:main": "vitest run -r packages/main --passWithNoTests encrypt",
     "test:preload": "vitest run -r packages/preload --passWithNoTests",
     "test:renderer": "vitest run -r packages/renderer --passWithNoTests EncryptionHome",
     "watch": "node scripts/watch.mjs",

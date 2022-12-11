@@ -21,7 +21,7 @@ describe('test split key', () => {
   });
 });
 
-describe.only('test encrypt file', () => {
+describe('test encrypt file', () => {
   test('test enctyption function', async () => {
     const testFile = utils.createFile();
     const encrypter = new Encrypter(utils.password, testFile.getPath(), utils.createCurrySend());
@@ -45,7 +45,7 @@ describe('test HMAC', () => {
   });
 });
 
-describe.only('test create metadata', () => {
+describe('test create metadata', () => {
   test('create metadata', async () => {
     const testFile = utils.createFile();
     const encrypter = new Encrypter(utils.password, testFile.getPath(), utils.createCurrySend());
@@ -94,7 +94,7 @@ describe('test retrieve metadata', () => {
   });
 });
 
-describe('test verify hash funtion', () => {
+describe.skip('test verify hash funtion', () => {
   test('test verify hash function', async () => {
     const testFile = utils.createFile();
 
@@ -108,8 +108,27 @@ describe('test verify hash funtion', () => {
     );
 
     await decrypter.retrieveMetaData();
-    decrypter.generateKeyWithScrypt().getEnKeyandHashKey();
+    decrypter.getEnKeyandHashKey();
     expect(await decrypter.authVerify()).toBe(true);
+
+    testFile.delete();
+  }, 20000);
+
+  test('verify hash function should throw error if the password is wrong', async () => {
+    const testFile = utils.createFile();
+
+    const encrypter = new Encrypter(utils.password, testFile.getPath(), utils.createCurrySend());
+    await encrypter.start();
+
+    const decrypter = new Decrypter(
+      'sdfsdfsdf',
+      encrypter.output.getPath(),
+      utils.createCurrySend(),
+    );
+
+    await decrypter.retrieveMetaData();
+    decrypter.getEnKeyandHashKey();
+    expect(await decrypter.authVerify()).toBe(false);
 
     testFile.delete();
   }, 20000);
@@ -129,7 +148,7 @@ describe('test decrypt function', () => {
     );
 
     await decrypter.retrieveMetaData();
-    decrypter.generateKeyWithScrypt().getEnKeyandHashKey();
+    decrypter.getEnKeyandHashKey();
     await decrypter.decrypt();
     expect(decrypter.temp?.doesExist()).toBe(true);
     decrypter.temp?.delete();

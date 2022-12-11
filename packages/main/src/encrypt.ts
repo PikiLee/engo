@@ -166,6 +166,7 @@ export class BaseCrypto {
 
   /**
    * Generate HMAC
+   * Not used, not working properly.
    * @param {string} filePath
    */
   HMAC(filePath: string) {
@@ -355,8 +356,9 @@ export class Encrypter extends BaseCrypto {
       this.getEnKeyandHashKey();
       this.sendInfo('加密中');
       await this.encrypt();
-      this.sendInfo('计算哈希值');
-      await this.HMAC(this.output.getPath());
+      this.hash = '0';
+      // this.sendInfo('计算哈希值');
+      // await this.HMAC(this.output.getPath());
       this.writeMetadataToFile();
 
       this.temp.delete();
@@ -498,12 +500,13 @@ export class Decrypter extends BaseCrypto {
    * Authenticate the data.
    */
   async authVerify() {
+    const originalHash = this.hash;
     const {hash} = await this.HMAC(this.input.getPath());
 
-    if (hash === this.hash) {
+    if (hash && hash === originalHash) {
       return true;
     } else {
-      throw '文件完整性验证失败';
+      return false;
     }
   }
 
@@ -543,8 +546,8 @@ export class Decrypter extends BaseCrypto {
       this.generateKeyWithScrypt().getEnKeyandHashKey();
 
       // verify mac code
-      this.sendInfo('验证文件完整性中');
-      await this.authVerify();
+      // this.sendInfo('验证文件完整性中');
+      // if (!(await this.authVerify())) throw '文件完整性验证失败';
       // decrypt
       this.sendInfo('解密中');
       await this.decrypt();
