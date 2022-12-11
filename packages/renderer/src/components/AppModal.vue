@@ -33,6 +33,7 @@
 
 <script setup lang="ts">
 import {computed} from 'vue';
+import BaseButton from './BaseButton.vue';
 
 const props = defineProps<{
   title: string;
@@ -77,6 +78,8 @@ const handleOk = () => {
     padding-block: 0.7rem;
     color: var(--text-main);
     border-bottom: 1px solid var(--text-dark);
+    display: grid;
+    place-items: center;
   }
 
   .contents {

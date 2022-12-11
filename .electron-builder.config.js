@@ -20,6 +20,9 @@ module.exports = async function () {
     extraMetadata: {
       version: getVersion(),
     },
+    win: {
+      target: 'msi',
+    },
 
     // Specify linux target just for disabling snap compilation
     linux: {
