@@ -340,7 +340,7 @@ export class Encrypter extends BaseCrypto {
    */
   async start() {
     try {
-      this.sendInfo('准备加密中');
+      this.sendInfo('一些准备活动');
 
       // compress
       this.temp = new Path(fs.mkdtempSync(join(tmpdir(), 'engo-')));
@@ -537,7 +537,7 @@ export class Decrypter extends BaseCrypto {
    */
   async start() {
     try {
-      this.sendInfo('准备解密中');
+      this.sendInfo('一些准备活动');
       await this.retrieveMetaData();
       // generate key from password
       this.generateKeyWithScrypt().getEnKeyandHashKey();
