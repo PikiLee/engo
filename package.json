@@ -1,7 +1,7 @@
 {
   "name": "engo",
   "description": "A encryption app.",
-  "version": "1.0.0",
+  "version": "1.0.2",
   "private": true,
   "author": {
     "name": "Pipi Lee"
@@ -13,7 +13,7 @@
     "build:preload": "cd ./packages/preload && vite build",
     "build:renderer": "cd ./packages/renderer && vite build",
     "compile": "cross-env MODE=production npm run build && electron-builder build --config .electron-builder.config.js --dir --config.asar=false",
-    "build:win": "electron-builder build --config .electron-builder.config.js --windows",
+    "build:win": "cross-env MODE=production npm run build && electron-builder build --config .electron-builder.config.js --windows",
     "test": "npm run test:main && npm run test:preload && npm run test:renderer && npm run test:e2e",
     "test:e2e": "npm run build && vitest run",
     "test:main": "vitest run -r packages/main --passWithNoTests compressor",
